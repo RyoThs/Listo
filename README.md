@@ -28,7 +28,12 @@ npm run preview    # tester la version finale
 npm run icons      # refaire les icônes depuis public/icon.svg
 ```
 
-> L'installation sur le téléphone et le hors ligne demandent **HTTPS** : il faut publier l'appli (ex. Vercel, Netlify, GitHub Pages). En local via le Wi-Fi, l'appli marche mais ne s'installe pas.
+## En ligne
+👉 **https://ryoths.github.io/Listo/** (GitHub Pages, HTTPS)
+
+Publication automatique : chaque envoi sur `main` lance `.github/workflows/deploy.yml` (tests → construction → mise en ligne). Si un test échoue, rien n'est publié.
+
+> L'installation sur le téléphone et le hors ligne demandent **HTTPS**. En local via le Wi-Fi, l'appli marche mais ne s'installe pas.
 
 ## Organisation
 ```

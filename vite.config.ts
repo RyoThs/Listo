@@ -3,8 +3,13 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
+// Sur GitHub Pages, l'appli vit dans un sous-dossier : https://ryoths.github.io/Listo/
+// En local (npm run dev), elle reste à la racine « / ».
+const base = process.env.GITHUB_PAGES ? '/Listo/' : '/';
+
 // Configuration de l'application installable (Android + iPhone).
 export default defineConfig({
+  base,
   plugins: [
     react(),
     tailwindcss(),
@@ -16,8 +21,9 @@ export default defineConfig({
         short_name: 'LISTO',
         description: 'Tes listes de courses, rapides et hors ligne.',
         lang: 'fr',
-        start_url: '/',
-        scope: '/',
+        id: base,
+        start_url: base,
+        scope: base,
         display: 'standalone',
         orientation: 'portrait',
         background_color: '#FAF7F2',
@@ -32,7 +38,6 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
-        navigateFallback: '/index.html',
       },
     }),
   ],
