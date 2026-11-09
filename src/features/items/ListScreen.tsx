@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { ArrowLeft, ShoppingCart, SlidersHorizontal, Pencil, ListChecks } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, SlidersHorizontal, Pencil, ListChecks, Star, CopyPlus } from 'lucide-react';
 import { db } from '../../db/db';
-import { getActiveItems, removeCompleted, setSortMode, uncheckAll } from '../../db/actions';
+import { getActiveItems, getFavoriteForList, removeCompleted, saveListAsFavorite, setSortMode, uncheckAll } from '../../db/actions';
+import { FavoritePickerSheet } from '../favorites/FavoritePickerSheet';
 import { sortItems, groupByCategory } from '../../lib/sort';
 import { computeBudget } from '../../lib/budget';
 import { getCategory } from '../../lib/categories';
@@ -25,7 +26,9 @@ const SORTS: { id: SortMode; label: string }[] = [
 ];
 
 export function ListScreen({ listId }: { listId: string }) {
-  const { openList, storeMode, setStoreMode, completedDisplay, setCompletedDisplay } = useUI();
+  const { openList, storeMode, setStoreMode, completedDisplay, setCompletedDisplay, showToast } = useUI();
+  const favorite = useLiveQuery(async () => (await getFavoriteForList(listId)) ?? null, [listId]);
+  const [pickingFavorite, setPickingFavorite] = useState(false);
   const list = useLiveQuery(async () => (await db.lists.get(listId)) ?? null, [listId]);
   const items = useLiveQuery(() => getActiveItems(listId), [listId]) ?? [];
   const [editing, setEditing] = useState<ShoppingItem | null>(null);
@@ -118,6 +121,7 @@ export function ListScreen({ listId }: { listId: string }) {
 
       <ItemEditorSheet item={editing} onClose={() => setEditing(null)} />
       <ListEditorSheet open={renaming} list={list} onClose={() => setRenaming(false)} />
+      <FavoritePickerSheet open={pickingFavorite} listId={listId} onClose={() => setPickingFavorite(false)} />
 
       <Sheet open={options} onClose={() => setOptions(false)} title="Affichage">
         <div className="space-y-5 pb-2">
@@ -138,6 +142,21 @@ export function ListScreen({ listId }: { listId: string }) {
                 <button key={v} onClick={() => setCompletedDisplay(v)} aria-pressed={completedDisplay === v}
                   className="min-h-11 rounded-lg text-sm font-medium text-muted aria-pressed:bg-card aria-pressed:text-ink aria-pressed:shadow-sm">{v === 'dim' ? 'Griser' : 'Masquer'}</button>
               ))}
+            </div>
+          </div>
+          <div>
+            <span className="mb-2 block text-sm font-medium text-muted">Liste favorite</span>
+            <div className="grid grid-cols-2 gap-2">
+              <Button variant="outline" disabled={!items.length} onClick={async () => {
+                  const r = await saveListAsFavorite(listId);
+                  if (r) showToast(r.updated ? 'Favori mis à jour ⭐' : 'Enregistrée en favori ⭐');
+                  setOptions(false);
+                }}>
+                <Star size={18} className="text-[#E0B04B]" /> {favorite ? 'Mettre à jour le favori' : 'Enregistrer en favori'}
+              </Button>
+              <Button variant="outline" onClick={() => { setOptions(false); setPickingFavorite(true); }}>
+                <CopyPlus size={18} /> Ajouter un favori
+              </Button>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2">

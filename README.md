@@ -9,6 +9,7 @@ Listes de courses intelligentes, installables sur **Android** et **iPhone**, qui
 - Saisie à la voix (micro), boutons + / −, unités (unité, kg, g, L).
 - Tri : par rayon, A → Z, ou ton ordre (glisser-déposer avec la poignée ⋮⋮).
 - Mode magasin : grosses lignes, un toucher pour cocher, articles pris grisés ou masqués, total dépensé en direct.
+- **Listes favorites** : « Enregistrer en favori » dans les options d'une liste ; sur l'accueil, un toucher sur un favori crée une liste toute prête ; « Ajouter un favori » verse ses articles dans la liste ouverte (sans doublon).
 - Hors ligne complet (service worker + base IndexedDB). Changements notés dans une file d'attente pour le futur partage en famille.
 
 ### Spécial Android

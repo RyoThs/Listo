@@ -30,6 +30,28 @@ export interface ShoppingList {
   deletedAt?: number;
 }
 
+/** Un article mémorisé dans une liste favorite (sans état coché). */
+export interface FavoriteItem {
+  name: string;
+  category: string;
+  quantity: number;
+  unit?: Unit;
+  estimatedPrice?: number;
+}
+
+/** Liste favorite : un modèle réutilisable (ex. « Courses de la semaine »). */
+export interface Favorite {
+  id: string;
+  title: string;
+  color: string;
+  icon?: string;
+  items: FavoriteItem[];
+  sourceListId?: string; // la liste d'où il vient (pour le mettre à jour au lieu d'en créer un 2e)
+  createdAt: number;
+  updatedAt: number;
+  deletedAt?: number;
+}
+
 /** Mémoire des articles déjà tapés, pour les suggestions. */
 export interface Suggestion {
   key: string; // nom en minuscules, sans accents
@@ -43,7 +65,7 @@ export interface Suggestion {
 /** Un changement en attente d'envoi (quand le partage en ligne existera). */
 export interface SyncOp {
   id?: number;
-  table: 'lists' | 'items';
+  table: 'lists' | 'items' | 'favorites';
   recordId: string;
   action: 'put' | 'delete';
   at: number;

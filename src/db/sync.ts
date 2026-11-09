@@ -14,7 +14,7 @@ export async function flushSyncQueue(): Promise<number> {
     const ops = await db.syncQueue.orderBy('at').limit(100).toArray();
     if (!ops.length) return 0;
     const payload = await Promise.all(
-      ops.map(async (op) => ({ ...op, record: await (op.table === 'lists' ? db.lists.get(op.recordId) : db.items.get(op.recordId)) })),
+      ops.map(async (op) => ({ ...op, record: await db.table(op.table).get(op.recordId) })),
     );
     const res = await fetch(SYNC_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ops: payload }) });
     if (!res.ok) return 0;

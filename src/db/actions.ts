@@ -1,5 +1,5 @@
 import { db } from './db';
-import type { ShoppingItem, ShoppingList, SortMode, Unit } from '../types';
+import type { Favorite, FavoriteItem, ShoppingItem, ShoppingList, SortMode, SyncOp, Unit } from '../types';
 import { newId } from '../lib/id';
 import { guessCategoryFromName } from '../lib/categories';
 import { normalize, capitalize } from '../lib/text';
@@ -9,7 +9,7 @@ import { normalize, capitalize } from '../lib/text';
 
 const now = () => Date.now();
 
-async function enqueue(table: 'lists' | 'items', recordId: string, action: 'put' | 'delete') {
+async function enqueue(table: SyncOp['table'], recordId: string, action: 'put' | 'delete') {
   // Un seul changement en attente par fiche : le plus récent remplace l'ancien.
   await db.syncQueue.where('recordId').equals(recordId).delete();
   await db.syncQueue.add({ table, recordId, action, at: now() });
@@ -184,4 +184,72 @@ export async function findSuggestions(text: string, exclude: string[] = [], limi
     .filter((s) => !excluded.has(s.key) && s.key.includes(q))
     .sort((a, b) => Number(b.key.startsWith(q)) - Number(a.key.startsWith(q)) || b.count - a.count || b.lastUsed - a.lastUsed)
     .slice(0, limit);
+}
+
+// ---------- Listes favorites ----------
+
+export async function getActiveFavorites() {
+  const favs = await db.favorites.orderBy('updatedAt').reverse().toArray();
+  return favs.filter((f) => !f.deletedAt);
+}
+
+export async function getFavoriteForList(listId: string) {
+  const favs = await db.favorites.where('sourceListId').equals(listId).toArray();
+  return favs.find((f) => !f.deletedAt);
+}
+
+/**
+ * Enregistre les articles d'une liste comme favori (cochés ou non).
+ * Si cette liste a déjà un favori, on le met à jour au lieu d'en créer un deuxième.
+ */
+export async function saveListAsFavorite(listId: string): Promise<{ favorite: Favorite; updated: boolean } | undefined> {
+  const list = await db.lists.get(listId);
+  if (!list) return undefined;
+  const items = (await getActiveItems(listId)).sort((a, b) => a.order - b.order);
+  const favItems: FavoriteItem[] = items.map(({ name, category, quantity, unit, estimatedPrice }) => ({ name, category, quantity, unit, estimatedPrice }));
+  const existing = await getFavoriteForList(listId);
+  const t = now();
+  const favorite: Favorite = existing
+    ? { ...existing, title: list.title, color: list.color, icon: list.icon, items: favItems, updatedAt: t }
+    : { id: newId(), title: list.title, color: list.color, icon: list.icon, items: favItems, sourceListId: listId, createdAt: t, updatedAt: t };
+  await db.transaction('rw', db.favorites, db.syncQueue, async () => {
+    await db.favorites.put(favorite);
+    await enqueue('favorites', favorite.id, 'put');
+  });
+  return { favorite, updated: !!existing };
+}
+
+/** Verse les articles d'un favori dans une liste (les doublons augmentent la quantité). Renvoie le nombre d'articles. */
+export async function addFavoriteToList(favoriteId: string, listId: string): Promise<number> {
+  const fav = await db.favorites.get(favoriteId);
+  if (!fav || fav.deletedAt) return 0;
+  let count = 0;
+  for (const fi of fav.items) {
+    const item = await addItem(listId, { name: fi.name, category: fi.category, quantity: fi.quantity, unit: fi.unit });
+    if (item) {
+      count++;
+      // on reprend le prix mémorisé seulement si l'article n'en a pas déjà un
+      if (fi.estimatedPrice !== undefined && item.estimatedPrice === undefined) {
+        await updateItem(item.id, { estimatedPrice: fi.estimatedPrice });
+      }
+    }
+  }
+  return count;
+}
+
+/** Crée une nouvelle liste toute prête à partir d'un favori. */
+export async function createListFromFavorite(favoriteId: string): Promise<ShoppingList | undefined> {
+  const fav = await db.favorites.get(favoriteId);
+  if (!fav || fav.deletedAt) return undefined;
+  const list = await createList({ title: fav.title, color: fav.color, icon: fav.icon });
+  await addFavoriteToList(favoriteId, list.id);
+  return list;
+}
+
+export async function deleteFavorite(id: string) {
+  const t = now();
+  await db.transaction('rw', db.favorites, db.syncQueue, async () => {
+    await db.favorites.update(id, { deletedAt: t, updatedAt: t });
+    await enqueue('favorites', id, 'delete');
+  });
 }
