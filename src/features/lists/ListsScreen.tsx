@@ -84,6 +84,7 @@ export function ListsScreen() {
             </button>
           );
         })}
+        <p className="pt-6 text-center text-xs text-muted">LISTO v{__APP_VERSION__}</p>
       </main>
 
       <button onClick={() => setCreating(true)} aria-label="Nouvelle liste"

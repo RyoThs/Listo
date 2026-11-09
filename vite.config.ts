@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
+import pkg from './package.json' with { type: 'json' };
 
 // Sur GitHub Pages, l'appli vit dans un sous-dossier : https://ryoths.github.io/Listo/
 // En local (npm run dev), elle reste à la racine « / ».
@@ -10,6 +11,8 @@ const base = process.env.GITHUB_PAGES ? '/Listo/' : '/';
 // Configuration de l'application installable (Android + iPhone).
 export default defineConfig({
   base,
+  // Le numéro de version (package.json) est affiché dans l'appli.
+  define: { __APP_VERSION__: JSON.stringify(pkg.version) },
   plugins: [
     react(),
     tailwindcss(),

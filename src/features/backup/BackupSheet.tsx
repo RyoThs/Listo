@@ -86,6 +86,7 @@ export function BackupSheet({ open, onClose }: { open: boolean; onClose: () => v
           onChange={(e) => { const f = e.target.files?.[0]; if (f) void importFile(f); }} />
         <p className="text-sm text-muted">L'import ne supprime jamais rien : il ajoute ce qui manque et garde la version la plus récente de chaque article.</p>
 
+        <p className="text-center text-xs text-muted">LISTO v{__APP_VERSION__}</p>
         {message && (
           <p role="status" className={`rounded-2xl p-3 text-[15px] ${message.ok ? 'bg-sage-soft text-sage-dark' : 'bg-[#F8E1DE] text-danger'}`}>{message.text}</p>
         )}
