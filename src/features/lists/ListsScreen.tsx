@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { Plus, ChevronRight } from 'lucide-react';
+import { Plus, ChevronRight, Settings } from 'lucide-react';
+import { BackupSheet, BACKUP_REMINDER_DAYS, daysSince } from '../backup/BackupSheet';
+import { IconButton } from '../../components/ui/Button';
 import { db } from '../../db/db';
 import { getActiveLists } from '../../db/actions';
 import { getListIcon } from '../../lib/listIcons';
@@ -12,7 +14,9 @@ import { FavoritesStrip } from '../favorites/FavoritesStrip';
 
 export function ListsScreen() {
   const openList = useUI((s) => s.openList);
+  const lastBackupAt = useUI((s) => s.lastBackupAt);
   const [creating, setCreating] = useState(false);
+  const [backup, setBackup] = useState(false);
 
   // useLiveQuery : l'écran se met à jour tout seul dès que la base change.
   const lists = useLiveQuery(getActiveLists, []);
@@ -27,6 +31,10 @@ export function ListsScreen() {
     return map;
   }, []);
 
+  // Petit point orange sur ⚙️ : il y a des articles et pas de sauvegarde depuis 14 jours.
+  const hasItems = !!counts && Object.values(counts).some((c) => c.total > 0);
+  const backupDue = hasItems && (daysSince(lastBackupAt) ?? Infinity) >= BACKUP_REMINDER_DAYS;
+
   return (
     <div className="mx-auto flex min-h-full max-w-lg flex-col">
       <header className="pt-safe flex items-center justify-between px-4 pb-2">
@@ -36,6 +44,10 @@ export function ListsScreen() {
         <div className="flex items-center gap-2">
           <OfflineBadge />
           <InstallButton />
+          <IconButton label={backupDue ? 'Sauvegarde (à faire)' : 'Sauvegarde'} onClick={() => setBackup(true)} className="relative">
+            <Settings size={22} />
+            {backupDue && <span className="absolute top-2 right-2 size-2.5 rounded-full bg-[#E0A13B] ring-2 ring-cream" />}
+          </IconButton>
         </div>
       </header>
 
@@ -80,6 +92,7 @@ export function ListsScreen() {
       </button>
 
       <ListEditorSheet open={creating} onClose={() => setCreating(false)} />
+      <BackupSheet open={backup} onClose={() => setBackup(false)} />
     </div>
   );
 }

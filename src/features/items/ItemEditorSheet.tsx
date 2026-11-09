@@ -5,7 +5,8 @@ import { Field } from '../../components/ui/Field';
 import { Button } from '../../components/ui/Button';
 import { CATEGORIES } from '../../lib/categories';
 import { parsePrice } from '../../lib/format';
-import { deleteItem, updateItem } from '../../db/actions';
+import { deleteItem, restoreItems, updateItem } from '../../db/actions';
+import { useUI } from '../../stores/ui';
 import type { ShoppingItem, Unit } from '../../types';
 
 const UNITS: Unit[] = ['unité', 'kg', 'g', 'L'];
@@ -16,6 +17,7 @@ export function ItemEditorSheet({ item, onClose }: { item: ShoppingItem | null; 
   const [quantity, setQuantity] = useState('1');
   const [unit, setUnit] = useState<Unit>('unité');
   const [price, setPrice] = useState('');
+  const offerUndo = useUI((s) => s.offerUndo);
 
   useEffect(() => {
     if (!item) return;
@@ -72,7 +74,14 @@ export function ItemEditorSheet({ item, onClose }: { item: ShoppingItem | null; 
         </div>
 
         <Button type="submit" className="w-full">Enregistrer</Button>
-        <Button type="button" variant="ghost" className="w-full text-danger" onClick={async () => { if (item) await deleteItem(item.id); onClose(); }}>
+        <Button type="button" variant="ghost" className="w-full text-danger" onClick={async () => {
+            if (item) {
+              await deleteItem(item.id);
+              const id = item.id;
+              offerUndo(`${item.name} retiré`, () => restoreItems([id]));
+            }
+            onClose();
+          }}>
           <Trash2 size={18} /> Retirer de la liste
         </Button>
       </form>

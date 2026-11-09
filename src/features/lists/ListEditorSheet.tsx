@@ -4,7 +4,8 @@ import { Sheet } from '../../components/ui/Sheet';
 import { Field } from '../../components/ui/Field';
 import { Button } from '../../components/ui/Button';
 import { LIST_COLORS, LIST_ICONS } from '../../lib/listIcons';
-import { createList, deleteList, updateList } from '../../db/actions';
+import { createList, deleteList, restoreList, updateList } from '../../db/actions';
+import { useUI } from '../../stores/ui';
 import type { ShoppingList } from '../../types';
 
 /** Créer une liste (list absent) ou la modifier / supprimer (list présent). */
@@ -13,6 +14,7 @@ export function ListEditorSheet({ open, list, onClose, onDeleted }: { open: bool
   const [color, setColor] = useState(LIST_COLORS[0]);
   const [icon, setIcon] = useState('basket');
   const [confirm, setConfirm] = useState(false);
+  const offerUndo = useUI((s) => s.offerUndo);
 
   useEffect(() => {
     if (!open) return;
@@ -65,8 +67,10 @@ export function ListEditorSheet({ open, list, onClose, onDeleted }: { open: bool
             onClick={async () => {
               if (!confirm) return setConfirm(true);
               await deleteList(list.id);
+              const { id, title } = list;
               onClose();
               onDeleted?.();
+              offerUndo(`Liste « ${title} » supprimée`, () => restoreList(id));
             }}>
             <Trash2 size={18} /> {confirm ? 'Toucher encore pour supprimer' : 'Supprimer la liste'}
           </Button>

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Star, Trash2 } from 'lucide-react';
-import { createListFromFavorite, deleteFavorite, getActiveFavorites } from '../../db/actions';
+import { createListFromFavorite, deleteFavorite, getActiveFavorites, restoreFavorite } from '../../db/actions';
 import { getListIcon } from '../../lib/listIcons';
 import { useUI } from '../../stores/ui';
 import { Sheet } from '../../components/ui/Sheet';
@@ -50,6 +50,7 @@ export function FavoritesStrip() {
 
 function ManageFavoritesSheet({ open, favorites, onClose }: { open: boolean; favorites: Favorite[]; onClose: () => void }) {
   const [confirmId, setConfirmId] = useState<string | null>(null);
+  const offerUndo = useUI((s) => s.offerUndo);
   return (
     <Sheet open={open} onClose={() => { setConfirmId(null); onClose(); }} title="Mes favoris">
       <p className="mb-3 text-sm text-muted">Pour modifier un favori : ouvre une liste, change ses articles, puis « Mettre à jour le favori » dans ses options.</p>
@@ -64,6 +65,7 @@ function ManageFavoritesSheet({ open, favorites, onClose }: { open: boolean; fav
             <button onClick={async () => {
                 if (confirmId !== f.id) return setConfirmId(f.id);
                 await deleteFavorite(f.id);
+                offerUndo(`Favori « ${f.title} » supprimé`, () => restoreFavorite(f.id));
                 setConfirmId(null);
                 if (favorites.length === 1) onClose();
               }}

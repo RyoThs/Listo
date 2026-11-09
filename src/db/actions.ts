@@ -169,9 +169,37 @@ export async function uncheckAll(listId: string) {
   for (const i of items) if (i.isCompleted) await updateItem(i.id, { isCompleted: false });
 }
 
-export async function removeCompleted(listId: string) {
-  const items = await getActiveItems(listId);
-  for (const i of items) if (i.isCompleted) await deleteItem(i.id);
+/** Retire les articles cochés. Renvoie leurs identifiants (pour pouvoir annuler). */
+export async function removeCompleted(listId: string): Promise<string[]> {
+  const ids = (await getActiveItems(listId)).filter((i) => i.isCompleted).map((i) => i.id);
+  for (const id of ids) await deleteItem(id);
+  return ids;
+}
+
+// ---------- Annuler une suppression ----------
+// Les suppressions sont « douces » : la fiche est seulement marquée. Annuler = enlever la marque.
+
+async function restore(table: 'lists' | 'items' | 'favorites', ids: string[]) {
+  const t = now();
+  await db.transaction('rw', db.table(table), db.syncQueue, async () => {
+    for (const id of ids) {
+      await db.table(table).update(id, { deletedAt: undefined, updatedAt: t });
+      await enqueue(table, id, 'put');
+    }
+  });
+}
+
+export const restoreItems = (ids: string[]) => restore('items', ids);
+export const restoreFavorite = (id: string) => restore('favorites', [id]);
+
+/** Remet une liste ET les articles supprimés en même temps qu'elle (pas ceux retirés avant). */
+export async function restoreList(id: string) {
+  const list = await db.lists.get(id);
+  if (!list?.deletedAt) return;
+  const at = list.deletedAt;
+  const itemIds = (await db.items.where('listId').equals(id).toArray()).filter((i) => i.deletedAt === at).map((i) => i.id);
+  await restore('lists', [id]);
+  await restore('items', itemIds);
 }
 
 /** Suggestions pendant la frappe : d'abord les articles les plus utilisés. */

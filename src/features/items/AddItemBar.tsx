@@ -45,19 +45,22 @@ export function AddItemBar({ listId, existingNames }: { listId: string; existing
     return () => clearTimeout(t);
   }, [toast]);
 
-  const submit = async () => {
-    if (!text.trim()) return;
-    await addText(text);
+  // On vide le champ TOUT DE SUITE, puis on ajoute en arrière-plan.
+  // (Avant : le champ était vidé à la fin de l'ajout et pouvait effacer ce qu'on tapait déjà ensuite.)
+  const submit = () => {
+    const value = text.trim();
+    if (!value) return;
     setText('');
     inputRef.current?.focus(); // le clavier reste ouvert pour enchaîner
+    void addText(value);
   };
 
-  const pick = async (s: Suggestion) => {
+  const pick = (s: Suggestion) => {
     const { quantity, unit } = parseEntry(text);
-    await addItem(listId, { name: s.name, category: s.category, unit: unit ?? s.unit, quantity });
-    haptic(8);
     setText('');
     inputRef.current?.focus();
+    haptic(8);
+    void addItem(listId, { name: s.name, category: s.category, unit: unit ?? s.unit, quantity });
   };
 
   const value = speech.listening ? speech.interim || 'Je t’écoute…' : text;
@@ -73,7 +76,7 @@ export function AddItemBar({ listId, existingNames }: { listId: string; existing
             {suggestions.map((s) => {
               const c = getCategory(s.category);
               return (
-                <button key={s.key} role="option" aria-selected={false} onClick={() => void pick(s)} onMouseDown={(e) => e.preventDefault()}
+                <button key={s.key} role="option" aria-selected={false} onClick={() => pick(s)} onMouseDown={(e) => e.preventDefault()}
                   className="inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-full border border-line bg-card px-3 text-sm font-medium">
                   <span className="size-2 rounded-full" style={{ background: c.color }} /> {s.name}
                 </button>
@@ -81,7 +84,7 @@ export function AddItemBar({ listId, existingNames }: { listId: string; existing
             })}
           </div>
         )}
-        <form className="flex items-center gap-2" onSubmit={(e) => { e.preventDefault(); void submit(); }}>
+        <form className="flex items-center gap-2" onSubmit={(e) => { e.preventDefault(); submit(); }}>
           <input ref={inputRef} value={value} onChange={(e) => setText(e.target.value)} readOnly={speech.listening}
             placeholder="Ajouter un article…" aria-label="Ajouter un article" enterKeyHint="send" autoComplete="off" autoCapitalize="sentences"
             className="min-h-12 min-w-0 flex-1 rounded-2xl border border-line bg-card px-4 text-base outline-none focus:border-sage focus:ring-2 focus:ring-sage/25" />

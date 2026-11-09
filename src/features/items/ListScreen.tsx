@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { ArrowLeft, ShoppingCart, SlidersHorizontal, Pencil, ListChecks, Star, CopyPlus } from 'lucide-react';
 import { db } from '../../db/db';
-import { getActiveItems, getFavoriteForList, removeCompleted, saveListAsFavorite, setSortMode, uncheckAll } from '../../db/actions';
+import { getActiveItems, getFavoriteForList, removeCompleted, restoreItems, saveListAsFavorite, setSortMode, uncheckAll } from '../../db/actions';
 import { FavoritePickerSheet } from '../favorites/FavoritePickerSheet';
 import { sortItems, groupByCategory } from '../../lib/sort';
 import { computeBudget } from '../../lib/budget';
@@ -26,7 +26,7 @@ const SORTS: { id: SortMode; label: string }[] = [
 ];
 
 export function ListScreen({ listId }: { listId: string }) {
-  const { openList, storeMode, setStoreMode, completedDisplay, setCompletedDisplay, showToast } = useUI();
+  const { openList, storeMode, setStoreMode, completedDisplay, setCompletedDisplay, showToast, offerUndo } = useUI();
   const favorite = useLiveQuery(async () => (await getFavoriteForList(listId)) ?? null, [listId]);
   const [pickingFavorite, setPickingFavorite] = useState(false);
   const list = useLiveQuery(async () => (await db.lists.get(listId)) ?? null, [listId]);
@@ -163,7 +163,11 @@ export function ListScreen({ listId }: { listId: string }) {
             <Button variant="outline" disabled={!done.length} onClick={() => { void uncheckAll(listId); setOptions(false); }}>
               <ListChecks size={18} /> Tout décocher
             </Button>
-            <Button variant="outline" className="text-danger" disabled={!done.length} onClick={() => { void removeCompleted(listId); setOptions(false); }}>
+            <Button variant="outline" className="text-danger" disabled={!done.length} onClick={async () => {
+                setOptions(false);
+                const ids = await removeCompleted(listId);
+                offerUndo(ids.length === 1 ? '1 article retiré' : `${ids.length} articles retirés`, () => restoreItems(ids));
+              }}>
               Retirer les pris
             </Button>
           </div>
