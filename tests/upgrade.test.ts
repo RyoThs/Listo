@@ -15,10 +15,29 @@ describe('Mise à jour de la base (version 1 → 2)', () => {
     // 2) La nouvelle version de l'appli ouvre la même base
     const db = new ListoDB(name);
     await db.open();
-    expect(db.verno).toBe(2);
+    expect(db.verno).toBe(3);
     expect((await db.lists.toArray()).map((l) => l.title)).toEqual(['Ma liste']); // pas de liste « Courses de la semaine » en plus
     expect((await db.items.get('I1'))!.name).toBe('Lait');
     expect(await db.favorites.count()).toBe(0);
+    db.close();
+    await Dexie.delete(name);
+  });
+
+  it('version 2 → 3 : garde favoris et listes, ajoute les cartes de fidélité', async () => {
+    const name = 'listo-upgrade-test-3';
+    const old = new Dexie(name);
+    old.version(1).stores({ lists: 'id, createdAt, updatedAt', items: 'id, listId, updatedAt', suggestions: 'key, count, lastUsed', syncQueue: '++id, recordId, at' });
+    old.version(2).stores({ favorites: 'id, updatedAt, sourceListId' });
+    await old.table('lists').add({ id: 'L1', title: 'Ma liste', color: '#000', createdAt: 1, updatedAt: 1, sortMode: 'category' });
+    await old.table('favorites').add({ id: 'F1', title: 'Fav', color: '#000', items: [], createdAt: 1, updatedAt: 1 });
+    old.close();
+
+    const db = new ListoDB(name);
+    await db.open();
+    expect(db.verno).toBe(3);
+    expect(await db.lists.count()).toBe(1);
+    expect((await db.favorites.get('F1'))!.title).toBe('Fav');
+    expect(await db.cards.count()).toBe(0);
     db.close();
     await Dexie.delete(name);
   });

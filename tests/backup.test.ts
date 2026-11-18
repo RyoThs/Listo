@@ -76,7 +76,7 @@ describe('Sauvegarde', () => {
   it('ré-importer la même sauvegarde ne change rien', async () => {
     await sample();
     const text = JSON.stringify(await buildBackup());
-    expect(await importBackup(parseBackup(text))).toEqual({ lists: 0, items: 0, favorites: 0 });
+    expect(await importBackup(parseBackup(text))).toEqual({ lists: 0, items: 0, favorites: 0, cards: 0 });
   });
 
   it('remet un article supprimé depuis', async () => {

@@ -11,6 +11,7 @@ import { InstallButton } from '../pwa/InstallButton';
 import { OfflineBadge } from '../pwa/OfflineBadge';
 import { ListEditorSheet } from './ListEditorSheet';
 import { FavoritesStrip } from '../favorites/FavoritesStrip';
+import { CardsStrip } from '../cards/CardsStrip';
 
 export function ListsScreen() {
   const openList = useUI((s) => s.openList);
@@ -52,6 +53,7 @@ export function ListsScreen() {
       </header>
 
       <main className="flex-1 space-y-2.5 px-4 pb-28">
+        <CardsStrip />
         <FavoritesStrip />
         <p className="mb-1 text-sm text-muted">Mes listes</p>
         {lists?.length === 0 && (

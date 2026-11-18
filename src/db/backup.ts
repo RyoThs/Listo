@@ -1,5 +1,6 @@
 import { db } from './db';
-import type { Favorite, ShoppingItem, ShoppingList, Suggestion, Unit } from '../types';
+import type { Favorite, LoyaltyCard, ShoppingItem, ShoppingList, Suggestion, Unit } from '../types';
+import { dataUrlToPhoto, photoToDataUrl } from '../lib/photo';
 
 // Sauvegarde dans un fichier, et restauration depuis ce fichier.
 // La restauration FUSIONNE : elle n'efface jamais rien. Pour chaque fiche, la version la plus récente gagne.
@@ -14,7 +15,14 @@ export interface BackupFile {
   items: ShoppingItem[];
   favorites: Favorite[];
   suggestions: Suggestion[];
+  // Ajout v0.5 : les cartes de fidélité, photo écrite en texte (les anciennes sauvegardes n'en ont pas).
+  cards?: BackupCard[];
 }
+
+export type BackupCard = Omit<LoyaltyCard, 'photo'> & { photo?: string };
+
+/** Une sauvegarde vérifiée, prête à être fusionnée (photos remises en octets). */
+export type ParsedBackup = Omit<BackupFile, 'cards'> & { cards: LoyaltyCard[] };
 
 export async function buildBackup(): Promise<BackupFile> {
   const alive = <T extends { deletedAt?: number }>(rows: T[]) => rows.filter((r) => !r.deletedAt);
@@ -26,6 +34,7 @@ export async function buildBackup(): Promise<BackupFile> {
     items: alive(await db.items.toArray()),
     favorites: alive(await db.favorites.toArray()),
     suggestions: await db.suggestions.toArray(),
+    cards: alive(await db.cards.toArray()).map((c) => ({ ...c, photo: c.photo ? photoToDataUrl(c.photo) : undefined })),
   };
 }
 
@@ -79,10 +88,21 @@ function cleanSuggestion(r: any): Suggestion | null {
   return { key: r.key, name: r.name, category: isStr(r.category) ? r.category : 'other', unit: optUnit(r.unit), count: isNum(r.count) ? r.count : 1, lastUsed: isNum(r.lastUsed) ? r.lastUsed : 0 };
 }
 
+function cleanCard(r: any): LoyaltyCard | null {
+  if (!r || !isStr(r.id) || !isStr(r.name)) return null;
+  const photo = dataUrlToPhoto(r.photo);
+  const number = optStr(r.number)?.slice(0, 60);
+  if (!photo && !number) return null; // une carte sans photo ni numéro ne sert à rien
+  return {
+    id: r.id, name: r.name.slice(0, 40), color: isStr(r.color) ? r.color : '#4E7F60', photo, number,
+    createdAt: isNum(r.createdAt) ? r.createdAt : Date.now(), updatedAt: isNum(r.updatedAt) ? r.updatedAt : 0,
+  };
+}
+
 export class BackupError extends Error {}
 
 /** Lit le texte d'un fichier de sauvegarde. Lève BackupError avec un message clair si ce n'en est pas un. */
-export function parseBackup(text: string): BackupFile {
+export function parseBackup(text: string): ParsedBackup {
   let data: any;
   try { data = JSON.parse(text); } catch { throw new BackupError("Ce fichier n'est pas une sauvegarde LISTO (format illisible)."); }
   if (!data || data.app !== 'listo') throw new BackupError("Ce fichier n'est pas une sauvegarde LISTO.");
@@ -92,17 +112,18 @@ export function parseBackup(text: string): BackupFile {
     app: 'listo', format: data.format, exportedAt: isNum(data.exportedAt) ? data.exportedAt : 0,
     lists: pick(data.lists, cleanList), items: pick(data.items, cleanItem),
     favorites: pick(data.favorites, cleanFavorite), suggestions: pick(data.suggestions, cleanSuggestion),
+    cards: pick(data.cards, cleanCard),
   };
 }
 
-export interface ImportResult { lists: number; items: number; favorites: number }
+export interface ImportResult { lists: number; items: number; favorites: number; cards: number }
 
 /** Fusionne une sauvegarde dans le téléphone. Ne supprime rien ; garde la version la plus récente. */
-export async function importBackup(backup: BackupFile): Promise<ImportResult> {
-  const result: ImportResult = { lists: 0, items: 0, favorites: 0 };
+export async function importBackup(backup: ParsedBackup): Promise<ImportResult> {
+  const result: ImportResult = { lists: 0, items: 0, favorites: 0, cards: 0 };
   const knownLists = new Set([...(await db.lists.toCollection().primaryKeys()), ...backup.lists.map((l) => l.id)]);
 
-  await db.transaction('rw', [db.lists, db.items, db.favorites, db.suggestions], async () => {
+  await db.transaction('rw', [db.lists, db.items, db.favorites, db.suggestions, db.cards], async () => {
     // Nouveau téléphone : la liste de départ créée automatiquement (vide, jamais modifiée)
     // ferait doublon avec la liste du même nom dans la sauvegarde. On la retire : elle ne contient rien.
     // Règle stricte : vide + jamais modifiée + même nom qu'une liste de la sauvegarde.
@@ -130,6 +151,7 @@ export async function importBackup(backup: BackupFile): Promise<ImportResult> {
     await merge(db.lists, backup.lists, 'lists');
     await merge(db.items, backup.items.filter((i) => knownLists.has(i.listId)), 'items');
     await merge(db.favorites, backup.favorites, 'favorites');
+    await merge(db.cards, backup.cards, 'cards');
     for (const s of backup.suggestions) {
       const local = await db.suggestions.get(s.key);
       if (!local || s.count > local.count) await db.suggestions.put(s);

@@ -54,8 +54,8 @@ export function BackupSheet({ open, onClose }: { open: boolean; onClose: () => v
     setBusy(true); setMessage(null);
     try {
       const r = await importBackup(parseBackup(await file.text()));
-      const total = r.lists + r.items + r.favorites;
-      setMessage({ ok: true, text: total === 0 ? 'Tout était déjà à jour : rien à restaurer.' : `Restauré : ${r.lists} liste(s), ${r.items} article(s), ${r.favorites} favori(s).` });
+      const total = r.lists + r.items + r.favorites + r.cards;
+      setMessage({ ok: true, text: total === 0 ? 'Tout était déjà à jour : rien à restaurer.' : `Restauré : ${r.lists} liste(s), ${r.items} article(s), ${r.favorites} favori(s)${r.cards ? `, ${r.cards} carte(s) de fidélité` : ''}.` });
       if (total) showToast('Sauvegarde restaurée ✓');
     } catch (e) {
       setMessage({ ok: false, text: e instanceof BackupError ? e.message : 'Impossible de lire ce fichier.' });
@@ -73,7 +73,7 @@ export function BackupSheet({ open, onClose }: { open: boolean; onClose: () => v
           <span>{lastBackupLabel(lastBackupAt)}</span>
         </p>
         <p className="text-[15px] text-muted">
-          Tes listes sont rangées dans ce téléphone uniquement. Une sauvegarde régulière te protège si tu changes de téléphone ou supprimes l'appli.
+          Tes listes et tes cartes de fidélité sont rangées dans ce téléphone uniquement. Une sauvegarde régulière te protège si tu changes de téléphone ou supprimes l'appli.
         </p>
 
         <Button className="w-full" disabled={busy} onClick={() => void exportNow()}>

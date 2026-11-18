@@ -70,3 +70,21 @@ export interface SyncOp {
   action: 'put' | 'delete';
   at: number;
 }
+
+/** Une photo gardée dans le téléphone (octets + type, plus fiable qu'un « Blob » sur les vieux iPhone). */
+export interface StoredPhoto {
+  data: ArrayBuffer;
+  type: string; // ex. image/jpeg
+}
+
+/** Une carte de fidélité : le nom du magasin, sa photo et (si on veut) son numéro. */
+export interface LoyaltyCard {
+  id: string;
+  name: string;
+  color: string;
+  photo?: StoredPhoto;
+  number?: string;
+  createdAt: number;
+  updatedAt: number;
+  deletedAt?: number;
+}
