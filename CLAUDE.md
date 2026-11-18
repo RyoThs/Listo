@@ -24,6 +24,13 @@ Réponds en français simple. Code complet d'abord, puis explications sans jargo
 8. **Ne jamais faire confiance à ce qui vient d'internet** (Open Food Facts) : nom nettoyé et raccourci, délai maximum, pas de réseau = on demande le nom.
 9. **Le stockage peut refuser** (iPhone en navigation privée, mémoire pleine) : toujours `try/catch`.
 
+## TDD : le test d'abord (demandé le 2026-11-18)
+1. Écrire le test de la prochaine petite étape dans `tests/`, lancer `npx vitest run <fichier>` et le voir **échouer** (rouge).
+2. Écrire le code le plus simple qui le fait passer (vert).
+3. Nettoyer le code, tests toujours verts. Puis l'étape suivante.
+- Un bug = d'abord un test qui le reproduit, puis la correction.
+- Pour les écrans : la logique va dans `src/lib/` ou `src/db/` (testable d'abord) ; l'écran se vérifie ensuite avec Playwright.
+
 ## Avant chaque envoi
 - `npm test` (Vitest) et `npm run build` doivent passer.
 - Nouvelle fonctionnalité = nouveaux tests dans `tests/`.
