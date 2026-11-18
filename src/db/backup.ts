@@ -1,6 +1,5 @@
 import { db } from './db';
 import type { Favorite, LoyaltyCard, ShoppingItem, ShoppingList, Suggestion, Unit } from '../types';
-import { dataUrlToPhoto, photoToDataUrl } from '../lib/photo';
 
 // Sauvegarde dans un fichier, et restauration depuis ce fichier.
 // La restauration FUSIONNE : elle n'efface jamais rien. Pour chaque fiche, la version la plus récente gagne.
@@ -15,13 +14,11 @@ export interface BackupFile {
   items: ShoppingItem[];
   favorites: Favorite[];
   suggestions: Suggestion[];
-  // Ajout v0.5 : les cartes de fidélité, photo écrite en texte (les anciennes sauvegardes n'en ont pas).
-  cards?: BackupCard[];
+  // Ajout v0.5 : les cartes de fidélité (les anciennes sauvegardes n'en ont pas).
+  cards?: LoyaltyCard[];
 }
 
-export type BackupCard = Omit<LoyaltyCard, 'photo'> & { photo?: string };
-
-/** Une sauvegarde vérifiée, prête à être fusionnée (photos remises en octets). */
+/** Une sauvegarde vérifiée, prête à être fusionnée. */
 export type ParsedBackup = Omit<BackupFile, 'cards'> & { cards: LoyaltyCard[] };
 
 export async function buildBackup(): Promise<BackupFile> {
@@ -34,7 +31,7 @@ export async function buildBackup(): Promise<BackupFile> {
     items: alive(await db.items.toArray()),
     favorites: alive(await db.favorites.toArray()),
     suggestions: await db.suggestions.toArray(),
-    cards: alive(await db.cards.toArray()).map((c) => ({ ...c, photo: c.photo ? photoToDataUrl(c.photo) : undefined })),
+    cards: alive(await db.cards.toArray()),
   };
 }
 
@@ -90,11 +87,10 @@ function cleanSuggestion(r: any): Suggestion | null {
 
 function cleanCard(r: any): LoyaltyCard | null {
   if (!r || !isStr(r.id) || !isStr(r.name)) return null;
-  const photo = dataUrlToPhoto(r.photo);
   const number = optStr(r.number)?.slice(0, 60);
-  if (!photo && !number) return null; // une carte sans photo ni numéro ne sert à rien
+  if (!number) return null; // une carte sans numéro ne sert à rien (une ancienne photo éventuelle est ignorée)
   return {
-    id: r.id, name: r.name.slice(0, 40), color: isStr(r.color) ? r.color : '#4E7F60', photo, number,
+    id: r.id, name: r.name.slice(0, 40), color: isStr(r.color) ? r.color : '#4E7F60', number,
     format: r.format === 'ean13' || r.format === 'code128' ? r.format : undefined,
     createdAt: isNum(r.createdAt) ? r.createdAt : Date.now(), updatedAt: isNum(r.updatedAt) ? r.updatedAt : 0,
   };

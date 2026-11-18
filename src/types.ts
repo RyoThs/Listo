@@ -71,19 +71,12 @@ export interface SyncOp {
   at: number;
 }
 
-/** Une photo gardée dans le téléphone (octets + type, plus fiable qu'un « Blob » sur les vieux iPhone). */
-export interface StoredPhoto {
-  data: ArrayBuffer;
-  type: string; // ex. image/jpeg
-}
-
-/** Une carte de fidélité : le nom du magasin, sa photo et (si on veut) son numéro. */
+/** Une carte de fidélité : le nom du magasin et son numéro (LISTO en dessine le code-barres). */
 export interface LoyaltyCard {
   id: string;
   name: string;
   color: string;
-  photo?: StoredPhoto;
-  number?: string;
+  number?: string; // absent seulement pour d'anciennes cartes « photo » : l'appli demande alors le numéro
   /** Format du code-barres dessiné à partir du numéro (absent = automatique). */
   format?: 'auto' | 'ean13' | 'code128';
   createdAt: number;

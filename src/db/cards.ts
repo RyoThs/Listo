@@ -1,10 +1,10 @@
 import { db } from './db';
 import { newId } from '../lib/id';
-import type { LoyaltyCard, StoredPhoto } from '../types';
+import type { LoyaltyCard } from '../types';
 
 type Format = NonNullable<LoyaltyCard['format']>;
 
-// Les cartes de fidélité restent dans le téléphone (pas de partage en ligne : ce sont des photos personnelles).
+// Les cartes de fidélité : nom du magasin + numéro. Elles restent dans le téléphone.
 
 export async function getActiveCards() {
   const cards = await db.cards.toArray();
@@ -15,8 +15,7 @@ export async function getActiveCards() {
 export interface CardDraft {
   name: string;
   color: string;
-  photo?: StoredPhoto;
-  number?: string;
+  number: string;
   format?: Format;
 }
 
@@ -25,7 +24,7 @@ const cleanNumber = (n?: string) => n?.replace(/\s+/g, ' ').trim() || undefined;
 /** Ajoute une carte (sans id) ou modifie une carte existante (avec id). */
 export async function saveCard(draft: CardDraft, id?: string): Promise<LoyaltyCard> {
   const now = Date.now();
-  const fields = { name: draft.name.trim().slice(0, 40) || 'Ma carte', color: draft.color, photo: draft.photo, number: cleanNumber(draft.number)?.slice(0, 60), format: draft.format === 'auto' ? undefined : draft.format };
+  const fields = { name: draft.name.trim().slice(0, 40) || 'Ma carte', color: draft.color, number: cleanNumber(draft.number)?.slice(0, 60), format: draft.format === 'auto' ? undefined : draft.format };
   if (id) {
     await db.cards.update(id, { ...fields, updatedAt: now });
     return (await db.cards.get(id))!;

@@ -28,6 +28,11 @@ export class ListoDB extends Dexie {
     this.version(3).stores({
       cards: 'id, updatedAt',
     });
+    // Version 4 (2026-11-18) : les cartes n'ont plus de photo (seulement le numéro).
+    // On efface les anciennes photos pour libérer de la place ; les cartes restent.
+    this.version(4).stores({}).upgrade((tx) =>
+      tx.table('cards').toCollection().modify((card: Record<string, unknown>) => { delete card.photo; }),
+    );
 
     // Au tout premier lancement : une liste prête à l'emploi.
     this.on('populate', (tx) => {

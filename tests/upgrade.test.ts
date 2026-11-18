@@ -15,7 +15,7 @@ describe('Mise à jour de la base (version 1 → 2)', () => {
     // 2) La nouvelle version de l'appli ouvre la même base
     const db = new ListoDB(name);
     await db.open();
-    expect(db.verno).toBe(3);
+    expect(db.verno).toBe(4);
     expect((await db.lists.toArray()).map((l) => l.title)).toEqual(['Ma liste']); // pas de liste « Courses de la semaine » en plus
     expect((await db.items.get('I1'))!.name).toBe('Lait');
     expect(await db.favorites.count()).toBe(0);
@@ -34,10 +34,35 @@ describe('Mise à jour de la base (version 1 → 2)', () => {
 
     const db = new ListoDB(name);
     await db.open();
-    expect(db.verno).toBe(3);
+    expect(db.verno).toBe(4);
     expect(await db.lists.count()).toBe(1);
     expect((await db.favorites.get('F1'))!.title).toBe('Fav');
     expect(await db.cards.count()).toBe(0);
+    db.close();
+    await Dexie.delete(name);
+  });
+
+  it('version 3 → 4 : efface les photos des cartes, garde les cartes', async () => {
+    const name = 'listo-upgrade-test-4';
+    const old = new Dexie(name);
+    old.version(1).stores({ lists: 'id, createdAt, updatedAt', items: 'id, listId, updatedAt', suggestions: 'key, count, lastUsed', syncQueue: '++id, recordId, at' });
+    old.version(2).stores({ favorites: 'id, updatedAt, sourceListId' });
+    old.version(3).stores({ cards: 'id, updatedAt' });
+    await old.table('lists').add({ id: 'L1', title: 'Ma liste', color: '#000', createdAt: 1, updatedAt: 1, sortMode: 'category' });
+    await old.table('cards').bulkAdd([
+      { id: 'C1', name: 'Leclerc', color: '#000', number: '42', photo: { data: new ArrayBuffer(8), type: 'image/jpeg' }, createdAt: 1, updatedAt: 1 },
+      { id: 'C2', name: 'Photo seule', color: '#000', photo: { data: new ArrayBuffer(8), type: 'image/jpeg' }, createdAt: 1, updatedAt: 1 },
+    ]);
+    old.close();
+
+    const db = new ListoDB(name);
+    await db.open();
+    expect(db.verno).toBe(4);
+    expect(await db.lists.count()).toBe(1);
+    const cards = await db.cards.toArray();
+    expect(cards.map((c) => c.name).sort()).toEqual(['Leclerc', 'Photo seule']);
+    expect(cards.every((c) => !('photo' in c))).toBe(true);
+    expect(cards.find((c) => c.id === 'C1')!.number).toBe('42');
     db.close();
     await Dexie.delete(name);
   });

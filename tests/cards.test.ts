@@ -2,69 +2,54 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { db } from '../src/db/db';
 import { getActiveCards, saveCard, deleteCard, restoreCard } from '../src/db/cards';
 import { buildBackup, parseBackup, importBackup } from '../src/db/backup';
-import { dataUrlToPhoto, photoToDataUrl } from '../src/lib/photo';
 
 beforeEach(async () => {
   await db.delete();
   await db.open();
 });
 
-// Une « photo » de test : quelques octets, dont toutes les valeurs de 0 à 255.
-const bytes = new Uint8Array(70_000).map((_, i) => i % 256);
-const photo = () => ({ data: bytes.slice().buffer, type: 'image/jpeg' });
-
 describe('Cartes de fidélité', () => {
   it('ajoute, modifie, range par nom, supprime puis annule', async () => {
-    const lidl = await saveCard({ name: '  Lidl ', color: '#111', photo: photo() });
+    const lidl = await saveCard({ name: '  Lidl ', color: '#111', number: '4006381333931' });
     await saveCard({ name: 'Carrefour', color: '#222', number: ' 1234   5678 ' });
     let cards = await getActiveCards();
     expect(cards.map((c) => c.name)).toEqual(['Carrefour', 'Lidl']);
     expect(cards[0].number).toBe('1234 5678');
-    expect(new Uint8Array(cards[1].photo!.data)).toEqual(bytes);
 
-    await saveCard({ name: 'Lidl Plus', color: '#333', photo: photo(), number: '' }, lidl.id);
-    expect((await db.cards.get(lidl.id))!).toMatchObject({ name: 'Lidl Plus', color: '#333', number: undefined });
+    await saveCard({ name: 'Lidl Plus', color: '#333', number: '42' }, lidl.id);
+    expect((await db.cards.get(lidl.id))!).toMatchObject({ name: 'Lidl Plus', color: '#333', number: '42' });
 
     await deleteCard(lidl.id);
-    expect((await getActiveCards()).map((c) => c.name)).toEqual(['Carrefour']);
+    cards = await getActiveCards();
+    expect(cards.map((c) => c.name)).toEqual(['Carrefour']);
     await restoreCard(lidl.id);
     expect(await getActiveCards()).toHaveLength(2);
   });
 
-  it('photo ⇄ texte : aller-retour sans perte, et refuse ce qui n’est pas une image', () => {
-    const back = dataUrlToPhoto(photoToDataUrl(photo()))!;
-    expect(back.type).toBe('image/jpeg');
-    expect(new Uint8Array(back.data)).toEqual(bytes);
-    expect(dataUrlToPhoto('data:text/html;base64,PHNjcmlwdD4=')).toBeUndefined();
-    expect(dataUrlToPhoto('javascript:alert(1)')).toBeUndefined();
-    expect(dataUrlToPhoto(42)).toBeUndefined();
-  });
-
   it('la sauvegarde contient les cartes et les restaure sur un nouveau téléphone', async () => {
-    await saveCard({ name: 'Leclerc', color: '#444', photo: photo(), number: '987' });
+    await saveCard({ name: 'Leclerc', color: '#444', number: '987' });
     const gone = await saveCard({ name: 'Ancienne', color: '#555', number: '1' });
     await deleteCard(gone.id);
     const text = JSON.stringify(await buildBackup());
+    expect(text).not.toContain('photo');
     await db.delete(); await db.open();
 
     const r = await importBackup(parseBackup(text));
     expect(r.cards).toBe(1);
-    const [card] = await getActiveCards();
-    expect(card).toMatchObject({ name: 'Leclerc', number: '987' });
-    expect(new Uint8Array(card.photo!.data)).toEqual(bytes);
-    // Deuxième import : rien de neuf
-    expect((await importBackup(parseBackup(text))).cards).toBe(0);
+    expect((await getActiveCards())[0]).toMatchObject({ name: 'Leclerc', number: '987' });
+    expect((await importBackup(parseBackup(text))).cards).toBe(0); // deuxième import : rien de neuf
   });
 
-  it('une ancienne sauvegarde (sans cartes) s’importe toujours ; une carte vide ou piégée est ignorée', async () => {
+  it('ancienne sauvegarde : sans cartes OK ; photo ignorée ; carte sans numéro ignorée', async () => {
     const old = JSON.stringify({ app: 'listo', format: 1, exportedAt: 1, lists: [], items: [], favorites: [], suggestions: [] });
     expect((await importBackup(parseBackup(old))).cards).toBe(0);
-    const bad = JSON.stringify({ app: 'listo', format: 1, lists: [], items: [], favorites: [], suggestions: [], cards: [
-      { id: 'a', name: 'Vide' },
-      { id: 'b', name: 'Piège', photo: 'data:image/svg+xml;base64,PHN2Zz4=' },
-      { id: 'c', name: 'OK', number: '42' },
+    const v05 = JSON.stringify({ app: 'listo', format: 1, lists: [], items: [], favorites: [], suggestions: [], cards: [
+      { id: 'a', name: 'Photo seule', photo: 'data:image/jpeg;base64,AAAA' },
+      { id: 'b', name: 'Avec numéro', number: '42', photo: 'data:image/jpeg;base64,AAAA' },
     ] });
-    expect(parseBackup(bad).cards.map((c) => c.id)).toEqual(['c']);
+    const cards = parseBackup(v05).cards;
+    expect(cards.map((c) => c.id)).toEqual(['b']);
+    expect(cards[0]).not.toHaveProperty('photo');
   });
 });
 
