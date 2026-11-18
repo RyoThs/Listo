@@ -13,7 +13,8 @@ Réponds en français simple. Code complet d'abord, puis explications sans jargo
 3. **Aucune erreur silencieuse.** Les actions lancées avec `void …` qui échouent affichent « Oups, ça n'a pas marché » (`src/lib/errors.ts`).
    Les tâches de fond se lancent avec `startSafely(...)`.
 4. **Un sujet = un fichier.** Code-barres : `src/lib/barcode/` (un fichier par format, vérifiés par la « caisse virtuelle » ZXing dans `tests/barcode.test.ts`, outil de test seulement).
-   Données : `src/db/lists.ts`, `items.ts`, `suggestions.ts`, `favorites.ts`, `cards.ts`, `backup.ts`, outils communs `queue.ts`.
+   Données : `src/db/lists.ts`, `items.ts`, `suggestions.ts`, `favorites.ts`, `cards.ts`, `backup.ts`, `sharedLists.ts`, outils communs `queue.ts`.
+   Lien « Ouvrir dans LISTO » : `src/lib/listLink.ts` (fabrication + vérification du lien), écrans dans `src/features/received/`.
    `actions.ts` ne fait que tout regrouper. Écrans : un dossier par fonctionnalité dans `src/features/`.
 5. **Pas de copier-coller d'interface** : réutiliser `components/ui/` (Button, Sheet, Field, Segmented, ColorPicker…).
 6. **Plusieurs écritures liées = une seule transaction** (tout ou rien).
@@ -23,6 +24,7 @@ Réponds en français simple. Code complet d'abord, puis explications sans jargo
 ## Avant chaque envoi
 - `npm test` (Vitest) et `npm run build` doivent passer.
 - Nouvelle fonctionnalité = nouveaux tests dans `tests/`.
+- ⚠️ La fausse base des tests (fake-indexeddb) n'annule PAS une transaction ratée : le « tout ou rien » se vérifie dans le vrai navigateur (Playwright).
 - Vérifier sur téléphones simulés (Playwright : iPhone et Pixel), y compris en **cassant volontairement** une donnée pour voir que seule la zone concernée affiche « … n'a pas pu s'afficher ».
 - Monter la version dans `package.json` (elle s'affiche en bas de l'accueil).
 - Mettre à jour la fiche LISTO, le journal du jour et, pour un choix important, une note dans `04 - Décisions/` du coffre.

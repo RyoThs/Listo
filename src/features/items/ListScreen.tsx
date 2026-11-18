@@ -8,6 +8,7 @@ import { computeBudget } from '../../lib/budget';
 import { getCategory } from '../../lib/categories';
 import { formatPrice } from '../../lib/format';
 import { buildListText, shareText } from '../../lib/shareText';
+import { appUrl, buildListLink } from '../../lib/listLink';
 import { useUI } from '../../stores/ui';
 import { useBackHandler } from '../../lib/backButton';
 import { IconButton } from '../../components/ui/Button';
@@ -46,13 +47,15 @@ export function ListScreen({ listId }: { listId: string }) {
   useEffect(() => { if (gone) openList(null); }, [gone, openList]);
   if (!list || gone) return null;
 
-  // Envoie les articles à prendre par SMS, WhatsApp, e-mail… (menu Partager du téléphone).
+  // Envoie les articles à prendre par SMS, WhatsApp, e-mail… (menu Partager du téléphone),
+  // avec un lien « Ouvrir dans LISTO » qui recrée la liste chez la personne qui le reçoit.
   const sendList = async () => {
     if (!pending.length) {
       showToast(items.length ? 'Tout est déjà dans le panier 🎉' : 'La liste est vide');
       return;
     }
-    const result = await shareText(list.title, buildListText(list.title, items));
+    const link = buildListLink(list, items, appUrl());
+    const result = await shareText(list.title, buildListText(list.title, items, link));
     if (result === 'copied') showToast('Liste copiée : colle-la dans ton message');
     if (result === 'failed') showToast("Impossible d'envoyer la liste");
   };

@@ -5,3 +5,4 @@ export * from './items';
 export * from './suggestions';
 export * from './favorites';
 export * from './cards';
+export * from './sharedLists';

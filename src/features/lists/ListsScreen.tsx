@@ -12,6 +12,7 @@ import { OfflineBadge } from '../pwa/OfflineBadge';
 import { ListEditorSheet } from './ListEditorSheet';
 import { FavoritesStrip } from '../favorites/FavoritesStrip';
 import { CardsStrip } from '../cards/CardsStrip';
+import { PasteListSheet } from '../received/PasteListSheet';
 import { ErrorBoundary } from '../../components/ErrorBoundary';
 
 export function ListsScreen() {
@@ -19,6 +20,7 @@ export function ListsScreen() {
   const lastBackupAt = useUI((s) => s.lastBackupAt);
   const [creating, setCreating] = useState(false);
   const [backup, setBackup] = useState(false);
+  const [pasting, setPasting] = useState(false);
 
   // useLiveQuery : l'écran se met à jour tout seul dès que la base change.
   const lists = useLiveQuery(getActiveLists, []);
@@ -95,7 +97,9 @@ export function ListsScreen() {
         <Plus size={22} /> Nouvelle liste
       </button>
 
-      <ListEditorSheet open={creating} onClose={() => setCreating(false)} />
+      <ListEditorSheet open={creating} onClose={() => setCreating(false)}
+        onPasteReceived={() => { setCreating(false); setPasting(true); }} />
+      <PasteListSheet open={pasting} onClose={() => setPasting(false)} />
       <BackupSheet open={backup} onClose={() => setBackup(false)} />
     </div>
   );

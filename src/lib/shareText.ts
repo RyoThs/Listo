@@ -12,8 +12,13 @@ import { formatQuantity } from './format';
  *   Fruits et légumes
  *   • Pommes (2 kg)
  *   • Bananes (×3)
+ *
+ *   📲 Ouvrir dans LISTO :
+ *   https://ryoths.github.io/Listo/#liste=…
+ *
+ * Le lien (facultatif) recrée la liste chez la personne qui le touche (voir listLink.ts).
  */
-export function buildListText(title: string, items: ShoppingItem[]): string {
+export function buildListText(title: string, items: ShoppingItem[], link?: string): string {
   const { pending } = sortItems(items, 'category');
   const lines = [`🛒 ${title}`];
   for (const group of groupByCategory(pending)) {
@@ -23,6 +28,7 @@ export function buildListText(title: string, items: ShoppingItem[]): string {
       lines.push(`• ${item.name}${qty ? ` (${qty})` : ''}`);
     }
   }
+  if (link) lines.push('', '📲 Ouvrir dans LISTO :', link);
   return lines.join('\n');
 }
 

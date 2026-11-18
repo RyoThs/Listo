@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Trash2 } from 'lucide-react';
+import { Trash2, ClipboardPaste } from 'lucide-react';
 import { Sheet } from '../../components/ui/Sheet';
 import { Field } from '../../components/ui/Field';
 import { Button } from '../../components/ui/Button';
@@ -10,7 +10,11 @@ import { useUI } from '../../stores/ui';
 import type { ShoppingList } from '../../types';
 
 /** Créer une liste (list absent) ou la modifier / supprimer (list présent). */
-export function ListEditorSheet({ open, list, onClose, onDeleted }: { open: boolean; list?: ShoppingList; onClose: () => void; onDeleted?: () => void }) {
+export function ListEditorSheet({ open, list, onClose, onDeleted, onPasteReceived }: {
+  open: boolean; list?: ShoppingList; onClose: () => void; onDeleted?: () => void;
+  /** Création seulement : bouton « Coller une liste reçue » (liste envoyée par message). */
+  onPasteReceived?: () => void;
+}) {
   const [title, setTitle] = useState('');
   const [color, setColor] = useState(LIST_COLORS[0]);
   const [icon, setIcon] = useState('basket');
@@ -52,6 +56,12 @@ export function ListEditorSheet({ open, list, onClose, onDeleted }: { open: bool
         </div>
 
         <Button type="submit" className="w-full">{list ? 'Enregistrer' : 'Créer la liste'}</Button>
+
+        {!list && onPasteReceived && (
+          <Button type="button" variant="ghost" className="w-full" onClick={onPasteReceived}>
+            <ClipboardPaste size={18} /> Coller une liste reçue
+          </Button>
+        )}
 
         {list && (
           <Button type="button" variant={confirm ? 'danger' : 'ghost'} className={`w-full ${confirm ? '' : 'text-danger'}`}
