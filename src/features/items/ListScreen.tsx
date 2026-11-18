@@ -1,40 +1,37 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { ArrowLeft, ShoppingCart, SlidersHorizontal, Pencil, ListChecks, Star, CopyPlus, Send } from 'lucide-react';
-import { buildListText, shareText } from '../../lib/shareText';
+import { ArrowLeft, ShoppingCart, SlidersHorizontal, Pencil, Send } from 'lucide-react';
 import { db } from '../../db/db';
-import { getActiveItems, getFavoriteForList, removeCompleted, restoreItems, saveListAsFavorite, setSortMode, uncheckAll } from '../../db/actions';
-import { FavoritePickerSheet } from '../favorites/FavoritePickerSheet';
+import { getActiveItems, getFavoriteForList } from '../../db/actions';
 import { sortItems, groupByCategory } from '../../lib/sort';
 import { computeBudget } from '../../lib/budget';
 import { getCategory } from '../../lib/categories';
+import { formatPrice } from '../../lib/format';
+import { buildListText, shareText } from '../../lib/shareText';
 import { useUI } from '../../stores/ui';
 import { useBackHandler } from '../../lib/backButton';
-import { IconButton, Button } from '../../components/ui/Button';
-import { Sheet } from '../../components/ui/Sheet';
+import { IconButton } from '../../components/ui/Button';
+import { ErrorBoundary } from '../../components/ErrorBoundary';
+import { FavoritePickerSheet } from '../favorites/FavoritePickerSheet';
+import { ListEditorSheet } from '../lists/ListEditorSheet';
+import { BudgetBar } from '../store-mode/BudgetBar';
 import { ItemRow } from './ItemRow';
 import { SortableItems } from './SortableItems';
 import { ItemEditorSheet } from './ItemEditorSheet';
 import { AddItemBar } from './AddItemBar';
-import { BudgetBar } from '../store-mode/BudgetBar';
-import { ListEditorSheet } from '../lists/ListEditorSheet';
+import { ListOptionsSheet } from './ListOptionsSheet';
 import type { ShoppingItem, SortMode } from '../../types';
 
-const SORTS: { id: SortMode; label: string }[] = [
-  { id: 'category', label: 'Par rayon' },
-  { id: 'alpha', label: 'A → Z' },
-  { id: 'custom', label: 'Mon ordre' },
-];
-
+/** L'écran d'une liste. Chaque zone (budget, articles, barre d'ajout) a sa propre cloison anti-panne. */
 export function ListScreen({ listId }: { listId: string }) {
-  const { openList, storeMode, setStoreMode, completedDisplay, setCompletedDisplay, showToast, offerUndo } = useUI();
-  const favorite = useLiveQuery(async () => (await getFavoriteForList(listId)) ?? null, [listId]);
-  const [pickingFavorite, setPickingFavorite] = useState(false);
+  const { openList, storeMode, setStoreMode, completedDisplay, showToast } = useUI();
   const list = useLiveQuery(async () => (await db.lists.get(listId)) ?? null, [listId]);
   const items = useLiveQuery(() => getActiveItems(listId), [listId]) ?? [];
+  const favorite = useLiveQuery(async () => (await getFavoriteForList(listId)) ?? null, [listId]);
   const [editing, setEditing] = useState<ShoppingItem | null>(null);
   const [options, setOptions] = useState(false);
   const [renaming, setRenaming] = useState(false);
+  const [pickingFavorite, setPickingFavorite] = useState(false);
 
   // Bouton Retour d'Android : revient à l'écran des listes.
   useBackHandler(true, () => openList(null));
@@ -60,37 +57,6 @@ export function ListScreen({ listId }: { listId: string }) {
     if (result === 'failed') showToast("Impossible d'envoyer la liste");
   };
 
-  const renderPending = () => {
-    if (!pending.length) {
-      return (
-        <div className="rounded-2xl border border-dashed border-line p-8 text-center text-muted">
-          {items.length ? 'Tout est dans le panier 🎉' : 'Liste vide. Ajoute un article en bas, ou dicte-le avec le micro.'}
-        </div>
-      );
-    }
-    if (mode === 'custom' && !storeMode) return <SortableItems items={pending} storeMode={storeMode} onEdit={setEditing} />;
-    if (mode === 'category') {
-      return groupByCategory(pending).map((g) => {
-        const c = getCategory(g.category);
-        return (
-          <section key={g.category} className="mb-3">
-            <h3 className="mb-1.5 flex items-center gap-2 px-1 text-xs font-semibold tracking-wider text-muted uppercase">
-              <c.icon size={14} style={{ color: c.color }} /> {c.label}
-            </h3>
-            <ul className="overflow-hidden rounded-2xl border border-line">
-              {g.items.map((i) => <ItemRow key={i.id} item={i} storeMode={storeMode} onEdit={setEditing} />)}
-            </ul>
-          </section>
-        );
-      });
-    }
-    return (
-      <ul className="overflow-hidden rounded-2xl border border-line">
-        {pending.map((i) => <ItemRow key={i.id} item={i} storeMode={storeMode} onEdit={setEditing} />)}
-      </ul>
-    );
-  };
-
   return (
     <div className="mx-auto flex min-h-full max-w-lg flex-col">
       <header className="pt-safe sticky top-0 z-20 flex items-center gap-1 bg-cream/95 px-2 pb-2 backdrop-blur">
@@ -105,90 +71,81 @@ export function ListScreen({ listId }: { listId: string }) {
         <IconButton label="Envoyer la liste" onClick={() => void sendList()}><Send size={20} /></IconButton>
         <IconButton label="Options d'affichage" onClick={() => setOptions(true)}><SlidersHorizontal size={21} /></IconButton>
         <button onClick={() => setStoreMode(!storeMode)} aria-pressed={storeMode} aria-label="Magasin"
-          className="inline-flex min-h-10 min-w-10 items-center justify-center gap-1.5 rounded-full border border-line px-3 text-sm max-[400px]:px-2.5 font-semibold aria-pressed:border-sage aria-pressed:bg-sage aria-pressed:text-white">
+          className="inline-flex min-h-10 min-w-10 items-center justify-center gap-1.5 rounded-full border border-line px-3 text-sm font-semibold max-[400px]:px-2.5 aria-pressed:border-sage aria-pressed:bg-sage aria-pressed:text-white">
           <ShoppingCart size={16} /> <span className="max-[400px]:sr-only">Magasin</span>
         </button>
       </header>
 
-      <main className={`flex-1 px-3 ${suggestionsSpace}`}>
-        {storeMode && <div className="mb-3"><BudgetBar budget={budget} /></div>}
-        {!storeMode && budget.hasPrices && (
-          <p className="mb-2 px-1 font-mono text-sm text-muted">Total prévu : {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(budget.estimated)}</p>
-        )}
-        {renderPending()}
+      <main className="flex-1 px-3 pb-40">
+        <ErrorBoundary name="Budget">
+          {storeMode && <div className="mb-3"><BudgetBar budget={budget} /></div>}
+          {!storeMode && budget.hasPrices && (
+            <p className="mb-2 px-1 font-mono text-sm text-muted">Total prévu : {formatPrice(budget.estimated)}</p>
+          )}
+        </ErrorBoundary>
 
-        {done.length > 0 && completedDisplay === 'dim' && (
-          <section className="mt-5">
-            <h3 className="mb-1.5 px-1 text-xs font-semibold tracking-wider text-muted uppercase">Dans le panier ({done.length})</h3>
-            <ul className="overflow-hidden rounded-2xl border border-line">
-              {done.map((i) => <ItemRow key={i.id} item={i} storeMode={storeMode} dimmed onEdit={setEditing} />)}
-            </ul>
-          </section>
-        )}
-        {done.length > 0 && completedDisplay === 'hide' && (
-          <p className="mt-4 text-center text-sm text-muted">{done.length} article{done.length > 1 ? 's' : ''} pris (masqué{done.length > 1 ? 's' : ''})</p>
-        )}
+        <ErrorBoundary name="Articles">
+          <PendingItems items={items} pending={pending} mode={mode} storeMode={storeMode} onEdit={setEditing} />
+          <DoneItems done={done} display={completedDisplay} storeMode={storeMode} onEdit={setEditing} />
+        </ErrorBoundary>
       </main>
 
-      <AddItemBar listId={listId} existingNames={names} />
+      <ErrorBoundary name="Barre d'ajout">
+        <AddItemBar listId={listId} existingNames={names} />
+      </ErrorBoundary>
 
       <ItemEditorSheet item={editing} onClose={() => setEditing(null)} />
       <ListEditorSheet open={renaming} list={list} onClose={() => setRenaming(false)} />
       <FavoritePickerSheet open={pickingFavorite} listId={listId} onClose={() => setPickingFavorite(false)} />
-
-      <Sheet open={options} onClose={() => setOptions(false)} title="Affichage">
-        <div className="space-y-5 pb-2">
-          <div>
-            <span className="mb-2 block text-sm font-medium text-muted">Trier</span>
-            <div className="grid grid-cols-3 gap-1 rounded-xl bg-cream p-1">
-              {SORTS.map((s) => (
-                <button key={s.id} onClick={() => void setSortMode(listId, s.id)} aria-pressed={mode === s.id}
-                  className="min-h-11 rounded-lg text-sm font-medium text-muted aria-pressed:bg-card aria-pressed:text-ink aria-pressed:shadow-sm">{s.label}</button>
-              ))}
-            </div>
-            {mode === 'custom' && <p className="mt-2 text-sm text-muted">Attrape la poignée ⋮⋮ d'un article et fais-le glisser.</p>}
-          </div>
-          <div>
-            <span className="mb-2 block text-sm font-medium text-muted">Articles pris</span>
-            <div className="grid grid-cols-2 gap-1 rounded-xl bg-cream p-1">
-              {(['dim', 'hide'] as const).map((v) => (
-                <button key={v} onClick={() => setCompletedDisplay(v)} aria-pressed={completedDisplay === v}
-                  className="min-h-11 rounded-lg text-sm font-medium text-muted aria-pressed:bg-card aria-pressed:text-ink aria-pressed:shadow-sm">{v === 'dim' ? 'Griser' : 'Masquer'}</button>
-              ))}
-            </div>
-          </div>
-          <div>
-            <span className="mb-2 block text-sm font-medium text-muted">Liste favorite</span>
-            <div className="grid grid-cols-2 gap-2">
-              <Button variant="outline" disabled={!items.length} onClick={async () => {
-                  const r = await saveListAsFavorite(listId);
-                  if (r) showToast(r.updated ? 'Favori mis à jour ⭐' : 'Enregistrée en favori ⭐');
-                  setOptions(false);
-                }}>
-                <Star size={18} className="text-[#E0B04B]" /> {favorite ? 'Mettre à jour le favori' : 'Enregistrer en favori'}
-              </Button>
-              <Button variant="outline" onClick={() => { setOptions(false); setPickingFavorite(true); }}>
-                <CopyPlus size={18} /> Ajouter un favori
-              </Button>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <Button variant="outline" disabled={!done.length} onClick={() => { void uncheckAll(listId); setOptions(false); }}>
-              <ListChecks size={18} /> Tout décocher
-            </Button>
-            <Button variant="outline" className="text-danger" disabled={!done.length} onClick={async () => {
-                setOptions(false);
-                const ids = await removeCompleted(listId);
-                offerUndo(ids.length === 1 ? '1 article retiré' : `${ids.length} articles retirés`, () => restoreItems(ids));
-              }}>
-              Retirer les pris
-            </Button>
-          </div>
-        </div>
-      </Sheet>
+      <ListOptionsSheet open={options} onClose={() => setOptions(false)} listId={listId} mode={mode}
+        itemCount={items.length} doneCount={done.length} hasFavorite={!!favorite} onPickFavorite={() => setPickingFavorite(true)} />
     </div>
   );
 }
 
-// Place pour la barre d'ajout fixe en bas (et ses suggestions).
-const suggestionsSpace = 'pb-40';
+type RowProps = { storeMode: boolean; onEdit: (i: ShoppingItem) => void };
+
+/** Les articles encore à prendre, selon le tri choisi. */
+function PendingItems({ items, pending, mode, storeMode, onEdit }: RowProps & { items: ShoppingItem[]; pending: ShoppingItem[]; mode: SortMode }) {
+  if (!pending.length) {
+    return (
+      <div className="rounded-2xl border border-dashed border-line p-8 text-center text-muted">
+        {items.length ? 'Tout est dans le panier 🎉' : 'Liste vide. Ajoute un article en bas, ou dicte-le avec le micro.'}
+      </div>
+    );
+  }
+  if (mode === 'custom' && !storeMode) return <SortableItems items={pending} storeMode={storeMode} onEdit={onEdit} />;
+  if (mode === 'alpha') return <ItemList items={pending} storeMode={storeMode} onEdit={onEdit} />;
+  return groupByCategory(pending).map((g) => {
+    const c = getCategory(g.category);
+    return (
+      <section key={g.category} className="mb-3">
+        <h3 className="mb-1.5 flex items-center gap-2 px-1 text-xs font-semibold tracking-wider text-muted uppercase">
+          <c.icon size={14} style={{ color: c.color }} /> {c.label}
+        </h3>
+        <ItemList items={g.items} storeMode={storeMode} onEdit={onEdit} />
+      </section>
+    );
+  });
+}
+
+/** Les articles déjà dans le panier : grisés en bas, ou masqués (juste le nombre). */
+function DoneItems({ done, display, storeMode, onEdit }: RowProps & { done: ShoppingItem[]; display: 'dim' | 'hide' }) {
+  if (!done.length) return null;
+  const n = done.length, s = n > 1 ? 's' : '';
+  if (display === 'hide') return <p className="mt-4 text-center text-sm text-muted">{n} article{s} pris (masqué{s})</p>;
+  return (
+    <section className="mt-5">
+      <h3 className="mb-1.5 px-1 text-xs font-semibold tracking-wider text-muted uppercase">Dans le panier ({n})</h3>
+      <ItemList items={done} storeMode={storeMode} dimmed onEdit={onEdit} />
+    </section>
+  );
+}
+
+function ItemList({ items, storeMode, dimmed, onEdit }: RowProps & { items: ShoppingItem[]; dimmed?: boolean }) {
+  return (
+    <ul className="overflow-hidden rounded-2xl border border-line">
+      {items.map((i) => <ItemRow key={i.id} item={i} storeMode={storeMode} dimmed={dimmed} onEdit={onEdit} />)}
+    </ul>
+  );
+}

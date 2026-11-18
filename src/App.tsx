@@ -3,14 +3,19 @@ import { ListsScreen } from './features/lists/ListsScreen';
 import { ListScreen } from './features/items/ListScreen';
 import { Toast } from './components/ui/Toast';
 import { UndoBar } from './components/ui/UndoBar';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 export default function App() {
   const currentListId = useUI((s) => s.currentListId);
+  const openList = useUI((s) => s.openList);
   return (
     <>
-      {currentListId ? <ListScreen key={currentListId} listId={currentListId} /> : <ListsScreen />}
-      <Toast />
-      <UndoBar />
+      {/* Chaque écran a sa cloison : s'il plante, « Réessayer » ramène à l'accueil. */}
+      <ErrorBoundary key={currentListId ?? 'accueil'} name="Écran" variant="screen" onReset={() => openList(null)}>
+        {currentListId ? <ListScreen key={currentListId} listId={currentListId} /> : <ListsScreen />}
+      </ErrorBoundary>
+      <ErrorBoundary name="Messages"><Toast /></ErrorBoundary>
+      <ErrorBoundary name="Annuler"><UndoBar /></ErrorBoundary>
     </>
   );
 }

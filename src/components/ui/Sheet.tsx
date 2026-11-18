@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { X } from 'lucide-react';
 import { useBackHandler } from '../../lib/backButton';
 import { IconButton } from './Button';
+import { ErrorBoundary } from '../ErrorBoundary';
 
 /** Fenêtre qui monte du bas de l'écran. Se ferme avec le bouton Retour d'Android. */
 export function Sheet({ open, onClose, title, children }: { open: boolean; onClose: () => void; title: string; children: ReactNode }) {
@@ -16,7 +17,7 @@ export function Sheet({ open, onClose, title, children }: { open: boolean; onClo
           <h2 className="text-lg font-bold">{title}</h2>
           <IconButton label="Fermer" onClick={onClose}><X size={22} /></IconButton>
         </div>
-        {children}
+        <ErrorBoundary name={title}>{children}</ErrorBoundary>
       </div>
     </div>
   );

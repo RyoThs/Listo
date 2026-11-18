@@ -43,10 +43,15 @@ Publication automatique : chaque envoi sur `main` lance `.github/workflows/deplo
 ## Organisation
 ```
 src/
-  db/          base Dexie (db.ts), actions (actions.ts), synchro future (sync.ts)
-  stores/      réglages d'affichage (Zustand)
-  features/    lists, items, store-mode, voice, pwa
-  components/ui/  boutons, fenêtres, champs (style shadcn/ui)
-  lib/         rayons, compréhension de la saisie, tri, budget, formats, outils téléphone
+  db/          base Dexie (db.ts) ; une partie par sujet : lists.ts, items.ts, suggestions.ts,
+               favorites.ts, cards.ts, backup.ts ; outils communs (queue.ts) ; actions.ts = point d'entrée
+  stores/      réglages d'affichage (Zustand, stockage qui ne plante jamais)
+  features/    lists, items, cards, favorites, backup, store-mode, voice, pwa
+  components/  ErrorBoundary (cloison anti-panne) ; ui/ : boutons, fenêtres, champs, couleurs, choix
+  lib/         rayons, saisie, tri, budget, formats, photos, partage, erreurs, outils téléphone
 tests/         tests automatiques (Vitest + fausse base IndexedDB)
 ```
+
+## Règles de robustesse
+Voir `CLAUDE.md`. En bref : chaque zone d'écran a sa cloison (`ErrorBoundary`), une action ratée affiche un message,
+une tâche de fond qui échoue n'arrête pas l'appli, et chaque sujet de données vit dans son propre fichier.

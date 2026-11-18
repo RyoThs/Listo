@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Check, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { Sheet } from '../../components/ui/Sheet';
 import { Field } from '../../components/ui/Field';
 import { Button } from '../../components/ui/Button';
+import { ColorPicker } from '../../components/ui/ColorPicker';
 import { LIST_COLORS, LIST_ICONS } from '../../lib/listIcons';
 import { createList, deleteList, restoreList, updateList } from '../../db/actions';
 import { useUI } from '../../stores/ui';
@@ -35,17 +36,7 @@ export function ListEditorSheet({ open, list, onClose, onDeleted }: { open: bool
       <form className="space-y-4 pb-2" onSubmit={(e) => { e.preventDefault(); void save(); }}>
         <Field label="Nom" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ex. Pharmacie, Bricolage…" autoFocus={!list} maxLength={40} enterKeyHint="done" />
 
-        <div>
-          <span className="mb-2 block text-sm font-medium text-muted">Couleur</span>
-          <div className="flex flex-wrap gap-2.5">
-            {LIST_COLORS.map((c) => (
-              <button type="button" key={c} onClick={() => setColor(c)} aria-label={`Couleur ${c}`} aria-pressed={color === c}
-                className="flex size-10 items-center justify-center rounded-full ring-offset-2 aria-pressed:ring-2 aria-pressed:ring-ink" style={{ background: c }}>
-                {color === c && <Check size={18} className="text-white" />}
-              </button>
-            ))}
-          </div>
-        </div>
+        <ColorPicker value={color} onChange={setColor} />
 
         <div>
           <span className="mb-2 block text-sm font-medium text-muted">Icône</span>

@@ -3,13 +3,14 @@ import { Trash2 } from 'lucide-react';
 import { Sheet } from '../../components/ui/Sheet';
 import { Field } from '../../components/ui/Field';
 import { Button } from '../../components/ui/Button';
+import { Segmented } from '../../components/ui/Segmented';
 import { CATEGORIES } from '../../lib/categories';
 import { parsePrice } from '../../lib/format';
 import { deleteItem, restoreItems, updateItem } from '../../db/actions';
 import { useUI } from '../../stores/ui';
 import type { ShoppingItem, Unit } from '../../types';
 
-const UNITS: Unit[] = ['unité', 'kg', 'g', 'L'];
+const UNITS = (['unité', 'kg', 'g', 'L'] as Unit[]).map((u) => ({ id: u, label: u }));
 
 export function ItemEditorSheet({ item, onClose }: { item: ShoppingItem | null; onClose: () => void }) {
   const [name, setName] = useState('');
@@ -50,12 +51,7 @@ export function ItemEditorSheet({ item, onClose }: { item: ShoppingItem | null; 
           <Field label="Quantité" value={quantity} onChange={(e) => setQuantity(e.target.value)} inputMode="decimal" />
           <div>
             <span className="mb-1 block text-sm font-medium text-muted">Unité</span>
-            <div className="flex h-12 rounded-xl border border-line bg-cream p-1">
-              {UNITS.map((u) => (
-                <button type="button" key={u} onClick={() => setUnit(u)} aria-pressed={unit === u}
-                  className="rounded-lg px-2.5 text-sm font-medium text-muted aria-pressed:bg-card aria-pressed:text-ink aria-pressed:shadow-sm">{u}</button>
-              ))}
-            </div>
+            <Segmented options={UNITS} value={unit} onChange={setUnit} className="h-12" />
           </div>
         </div>
 

@@ -3,7 +3,7 @@ import { X, RotateCw, Pencil } from 'lucide-react';
 import { useBackHandler } from '../../lib/backButton';
 import { IconButton, Button } from '../../components/ui/Button';
 import type { LoyaltyCard } from '../../types';
-import { usePhotoUrl } from './CardsStrip';
+import { usePhotoUrl } from './usePhotoUrl';
 
 /**
  * La carte en plein écran, sur fond blanc, pour la montrer à la caisse.
@@ -12,7 +12,7 @@ import { usePhotoUrl } from './CardsStrip';
 export function CardViewer({ card, onClose, onEdit }: { card: LoyaltyCard | null; onClose: () => void; onEdit: (c: LoyaltyCard) => void }) {
   const open = !!card;
   useBackHandler(open, onClose);
-  const url = usePhotoUrl(card);
+  const url = usePhotoUrl(card?.photo);
   const [turned, setTurned] = useState(false);
 
   useEffect(() => { setTurned(false); }, [card?.id]);

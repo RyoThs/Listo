@@ -5,13 +5,25 @@ import { useUI } from '../../stores/ui';
 import { Sheet } from '../../components/ui/Sheet';
 import { haptic } from '../../lib/device';
 
-/** Dans une liste : choisir un favori pour verser ses articles dedans. */
-export function FavoritePickerSheet({ open, listId, onClose }: { open: boolean; listId: string; onClose: () => void }) {
-  const favorites = useLiveQuery(getActiveFavorites, []) ?? [];
-  const showToast = useUI((s) => s.showToast);
+type Props = { open: boolean; listId: string; onClose: () => void };
 
+/** Dans une liste : choisir un favori pour verser ses articles dedans. */
+export function FavoritePickerSheet({ open, listId, onClose }: Props) {
+  // Le contenu est un morceau à part : il n'est préparé qu'à l'ouverture, à l'abri de la cloison de la fenêtre.
   return (
     <Sheet open={open} onClose={onClose} title="Ajouter un favori">
+      <FavoritePicker listId={listId} onClose={onClose} />
+    </Sheet>
+  );
+}
+
+function FavoritePicker({ listId, onClose }: Omit<Props, 'open'>) {
+  const favorites = useLiveQuery(getActiveFavorites, []);
+  const showToast = useUI((s) => s.showToast);
+  if (!favorites) return null;
+
+  return (
+    <>
       {favorites.length === 0 ? (
         <p className="mb-4 rounded-2xl bg-cream p-4 text-[15px] text-muted">
           Aucun favori pour l'instant. Remplis une liste, puis touche <b className="text-ink">Enregistrer en favori</b> dans ses options.
@@ -43,6 +55,6 @@ export function FavoritePickerSheet({ open, listId, onClose }: { open: boolean; 
           </ul>
         </>
       )}
-    </Sheet>
+    </>
   );
 }

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Check, ImagePlus, Trash2 } from 'lucide-react';
+import { ImagePlus, Trash2 } from 'lucide-react';
 import { Sheet } from '../../components/ui/Sheet';
 import { Field } from '../../components/ui/Field';
 import { Button } from '../../components/ui/Button';
@@ -8,7 +8,8 @@ import { preparePhoto } from '../../lib/photo';
 import { deleteCard, restoreCard, saveCard } from '../../db/cards';
 import { useUI } from '../../stores/ui';
 import type { LoyaltyCard, StoredPhoto } from '../../types';
-import { usePhotoUrl } from './CardsStrip';
+import { usePhotoUrl } from './usePhotoUrl';
+import { ColorPicker } from '../../components/ui/ColorPicker';
 
 /** Ajouter une carte (card absent) ou la modifier / supprimer (card présent). */
 export function CardEditorSheet({ open, card, onClose }: { open: boolean; card?: LoyaltyCard; onClose: () => void }) {
@@ -21,7 +22,7 @@ export function CardEditorSheet({ open, card, onClose }: { open: boolean; card?:
   const [confirm, setConfirm] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const { offerUndo, showToast } = useUI();
-  const preview = usePhotoUrl(photo ? { photo } : null);
+  const preview = usePhotoUrl(photo);
 
   useEffect(() => {
     if (!open) return;
@@ -85,17 +86,7 @@ export function CardEditorSheet({ open, card, onClose }: { open: boolean; card?:
 
         <Field label="Numéro de la carte (facultatif)" value={number} onChange={(e) => setNumber(e.target.value)} placeholder="Le numéro sous le code-barres" inputMode="numeric" maxLength={60} autoComplete="off" />
 
-        <div>
-          <span className="mb-2 block text-sm font-medium text-muted">Couleur</span>
-          <div className="flex flex-wrap gap-2.5">
-            {LIST_COLORS.map((c) => (
-              <button type="button" key={c} onClick={() => setColor(c)} aria-label={`Couleur ${c}`} aria-pressed={color === c}
-                className="flex size-10 items-center justify-center rounded-full ring-offset-2 aria-pressed:ring-2 aria-pressed:ring-ink" style={{ background: c }}>
-                {color === c && <Check size={18} className="text-white" />}
-              </button>
-            ))}
-          </div>
-        </div>
+        <ColorPicker value={color} onChange={setColor} />
 
         {error && <p role="alert" className="rounded-xl bg-[#F8E1DE] p-3 text-[15px] text-danger">{error}</p>}
         {!canSave && !busy && name.trim() && <p className="text-sm text-muted">Ajoute une photo ou un numéro pour enregistrer.</p>}

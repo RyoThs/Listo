@@ -6,7 +6,8 @@ import type { LoyaltyCard, StoredPhoto } from '../types';
 
 export async function getActiveCards() {
   const cards = await db.cards.toArray();
-  return cards.filter((c) => !c.deletedAt).sort((a, b) => a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' }));
+  // String(…) : une fiche abîmée (nom manquant) ne doit pas empêcher d'afficher les autres cartes.
+  return cards.filter((c) => !c.deletedAt).sort((a, b) => String(a.name).localeCompare(String(b.name), 'fr', { sensitivity: 'base' }));
 }
 
 export interface CardDraft {

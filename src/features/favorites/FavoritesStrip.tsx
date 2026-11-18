@@ -49,10 +49,19 @@ export function FavoritesStrip() {
 }
 
 function ManageFavoritesSheet({ open, favorites, onClose }: { open: boolean; favorites: Favorite[]; onClose: () => void }) {
+  return (
+    <Sheet open={open} onClose={onClose} title="Mes favoris">
+      <ManageFavorites favorites={favorites} onClose={onClose} />
+    </Sheet>
+  );
+}
+
+/** Contenu de « Mes favoris » (préparé seulement quand la fenêtre est ouverte). */
+function ManageFavorites({ favorites, onClose }: { favorites: Favorite[]; onClose: () => void }) {
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const offerUndo = useUI((s) => s.offerUndo);
   return (
-    <Sheet open={open} onClose={() => { setConfirmId(null); onClose(); }} title="Mes favoris">
+    <>
       <p className="mb-3 text-sm text-muted">Pour modifier un favori : ouvre une liste, change ses articles, puis « Mettre à jour le favori » dans ses options.</p>
       <ul className="mb-3 space-y-2">
         {favorites.map((f) => (
@@ -76,6 +85,6 @@ function ManageFavoritesSheet({ open, favorites, onClose }: { open: boolean; fav
           </li>
         ))}
       </ul>
-    </Sheet>
+    </>
   );
 }

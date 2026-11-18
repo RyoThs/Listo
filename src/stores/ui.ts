@@ -1,5 +1,13 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage, type StateStorage } from 'zustand/middleware';
+
+// Si le téléphone refuse d'enregistrer les réglages (navigation privée, mémoire pleine),
+// l'appli continue : les réglages seront juste oubliés à la fermeture.
+const safeStorage: StateStorage = {
+  getItem: (k) => { try { return localStorage.getItem(k); } catch { return null; } },
+  setItem: (k, v) => { try { localStorage.setItem(k, v); } catch { /* tant pis */ } },
+  removeItem: (k) => { try { localStorage.removeItem(k); } catch { /* tant pis */ } },
+};
 
 // Les réglages d'affichage (pas les données : elles sont dans la base).
 interface UIState {
@@ -42,6 +50,6 @@ export const useUI = create<UIState>()(
       setStoreMode: (on) => set({ storeMode: on }),
       setCompletedDisplay: (v) => set({ completedDisplay: v }),
     }),
-    { name: 'listo-ui', partialize: (s) => ({ completedDisplay: s.completedDisplay, lastBackupAt: s.lastBackupAt }) },
+    { name: 'listo-ui', storage: createJSONStorage(() => safeStorage), partialize: (s) => ({ completedDisplay: s.completedDisplay, lastBackupAt: s.lastBackupAt }) },
   ),
 );

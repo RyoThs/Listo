@@ -48,8 +48,12 @@ export function useSpeech(onFinal: (text: string) => void) {
     };
     rec.onend = () => { setListening(false); setInterim(''); };
     recRef.current = rec;
-    setListening(true);
-    rec.start();
+    try {
+      rec.start();
+      setListening(true);
+    } catch {
+      setError('Le micro n’a pas pu démarrer. Réessaie.');
+    }
   }, []);
 
   useEffect(() => () => recRef.current?.abort?.(), []);

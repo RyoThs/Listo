@@ -1,12 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { CreditCard, Plus } from 'lucide-react';
 import { getActiveCards } from '../../db/cards';
-import { photoUrl } from '../../lib/photo';
 import { haptic } from '../../lib/device';
 import type { LoyaltyCard } from '../../types';
 import { CardEditorSheet } from './CardEditorSheet';
 import { CardViewer } from './CardViewer';
+import { usePhotoUrl } from './usePhotoUrl';
+import { ErrorBoundary } from '../../components/ErrorBoundary';
 
 /** Accueil : « Mes cartes ». Un toucher sur une carte = elle s'affiche en grand pour la caisse. */
 export function CardsStrip() {
@@ -42,7 +43,9 @@ export function CardsStrip() {
         </div>
       )}
 
-      <CardViewer card={showing} onClose={() => setShowing(null)} onEdit={(c) => { setShowing(null); setEditing(c); }} />
+      <ErrorBoundary name="Affichage de la carte" onReset={() => setShowing(null)}>
+        <CardViewer card={showing} onClose={() => setShowing(null)} onEdit={(c) => { setShowing(null); setEditing(c); }} />
+      </ErrorBoundary>
       <CardEditorSheet open={editing !== null} card={editing === 'new' ? undefined : editing ?? undefined} onClose={() => setEditing(null)} />
     </section>
   );
@@ -50,7 +53,7 @@ export function CardsStrip() {
 
 /** La photo de la carte, en fond légèrement voilé derrière le nom du magasin. */
 function CardThumb({ card }: { card: LoyaltyCard }) {
-  const url = usePhotoUrl(card);
+  const url = usePhotoUrl(card.photo);
   if (!url) return null;
   return (
     <>
@@ -58,17 +61,4 @@ function CardThumb({ card }: { card: LoyaltyCard }) {
       <span className="absolute inset-0 bg-gradient-to-t from-black/45 to-transparent" />
     </>
   );
-}
-
-/** Crée l'adresse d'affichage de la photo et la libère quand on n'en a plus besoin. */
-export function usePhotoUrl(card: Pick<LoyaltyCard, 'photo'> | null | undefined) {
-  const photo = card?.photo;
-  const [url, setUrl] = useState<string | null>(null);
-  useEffect(() => {
-    if (!photo) { setUrl(null); return; }
-    const u = photoUrl(photo);
-    setUrl(u);
-    return () => URL.revokeObjectURL(u);
-  }, [photo]);
-  return url;
 }
