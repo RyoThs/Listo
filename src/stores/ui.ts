@@ -22,6 +22,9 @@ interface UIState {
   offerUndo: (message: string, run: () => Promise<void> | void) => void;
   clearUndo: () => void;
   lastBackupAt: number | null;
+  /** Nombre de personnes choisi la dernière fois pour une recette. */
+  persons: number;
+  setPersons: (n: number) => void;
   markBackup: () => void;
   openList: (id: string | null) => void;
   setStoreMode: (on: boolean) => void;
@@ -48,11 +51,13 @@ export const useUI = create<UIState>()(
       },
       clearUndo: () => set({ undo: null }),
       lastBackupAt: null,
+      persons: 4,
+      setPersons: (n) => set({ persons: n }),
       markBackup: () => set({ lastBackupAt: Date.now() }),
       openList: (id) => set({ currentListId: id, storeMode: false, storeStartedAt: null }),
       setStoreMode: (on) => set({ storeMode: on, storeStartedAt: on ? Date.now() : null }),
       setCompletedDisplay: (v) => set({ completedDisplay: v }),
     }),
-    { name: 'listo-ui', storage: createJSONStorage(() => safeStorage), partialize: (s) => ({ completedDisplay: s.completedDisplay, lastBackupAt: s.lastBackupAt }) },
+    { name: 'listo-ui', storage: createJSONStorage(() => safeStorage), partialize: (s) => ({ completedDisplay: s.completedDisplay, lastBackupAt: s.lastBackupAt, persons: s.persons }) },
   ),
 );

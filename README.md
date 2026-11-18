@@ -16,6 +16,10 @@ Listes de courses intelligentes, installables sur **Android** et **iPhone**, qui
 - **Mémoire des prix** : un prix entré est retenu ; la fois suivante il est pré-rempli et suit la quantité. « Total prévu : environ … · N sans prix ».
 - **« Déjà dans la liste »** : ajouter un article déjà présent augmente sa quantité, avec un message qui le dit.
 - **Scanner un code-barres** (bouton à côté du micro) : le nom du produit vient d'Open Food Facts (seul le numéro est envoyé, internet nécessaire) ; sans réponse, on écrit le nom et LISTO le reconnaît ensuite même hors ligne. Lecteur intégré du téléphone (Android) ou ZXing (iPhone, chargé seulement au besoin).
+- **Recettes et packs** (bouton « Recettes » au-dessus de la barre d'ajout) :
+  - *Idées de plats* : 34 plats français intégrés (hors ligne), quantités exactes pour 1 à 12 personnes ; ingrédients des placards (sel, huile, épices) décochés d'office.
+  - *En ligne* : recherche dans TheMealDB (≈ 800 recettes, en anglais ; ingrédients courants traduits, quantités converties quand c'est possible). Internet nécessaire.
+  - *Mes packs* : « Nouveau pack » (un nom + les articles tapés), ou « Garder dans mes packs » depuis une recette. Un toucher verse le pack dans la liste.
 - **Listes favorites** : « Enregistrer en favori » dans les options d'une liste ; sur l'accueil, un toucher sur un favori crée une liste toute prête ; « Ajouter un favori » verse ses articles dans la liste ouverte (sans doublon). Raccourci ⭐ au-dessus de la barre d'ajout quand la liste a moins de 5 articles à prendre (ex. un favori « Lasagnes » = un pack d'ingrédients).
 - **Annuler** : après une suppression (article, articles pris, liste, favori), un bandeau « Annuler » reste 6 secondes.
 - **Sauvegarde** (⚙️ sur l'accueil) : exporter dans un fichier (`listo-sauvegarde-AAAA-MM-JJ.json`) et importer sur un autre téléphone. L'import fusionne sans rien effacer (la version la plus récente gagne) et vérifie le fichier. Point orange sur ⚙️ après 14 jours sans sauvegarde.
@@ -49,14 +53,15 @@ Publication automatique : chaque envoi sur `main` lance `.github/workflows/deplo
 ```
 src/
   db/          base Dexie (db.ts) ; une partie par sujet : lists.ts, items.ts, suggestions.ts,
-               favorites.ts, cards.ts, backup.ts, sharedLists.ts, prices.ts, trips.ts, products.ts ;
+               favorites.ts, cards.ts, backup.ts, sharedLists.ts, prices.ts, trips.ts, products.ts, recipes.ts ;
                outils communs (queue.ts) ; actions.ts = point d'entrée
   stores/      réglages d'affichage (Zustand, stockage qui ne plante jamais)
-  features/    lists, items, cards, favorites, backup, store-mode (bilan, historique), scan, received, voice, pwa
+  features/    lists, items, cards, favorites, backup, store-mode (bilan, historique), scan, recipes, received, voice, pwa
   components/  ErrorBoundary (cloison anti-panne) ; ui/ : boutons, fenêtres, champs, couleurs, choix
   lib/         rayons, saisie, tri, budget, formats, partage, erreurs, outils téléphone
   lib/barcode/ code-barres maison : ean13.ts, code128.ts (normes publiques, aucune dépendance)
   lib/scan/    scanner : codes produits, Open Food Facts, lecteurs (intégré / ZXing)
+  lib/recipes/ recettes : catalogue français, nombre de personnes, TheMealDB (+ traduction, quantités)
 tests/         tests automatiques (Vitest + fausse base IndexedDB)
 ```
 

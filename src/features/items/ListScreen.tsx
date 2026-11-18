@@ -19,6 +19,7 @@ import { BudgetBar } from '../store-mode/BudgetBar';
 import { TripSummarySheet } from '../store-mode/TripSummarySheet';
 import { useFinishShopping } from '../store-mode/useFinishShopping';
 import { FavoritesQuickAdd } from '../favorites/FavoritesQuickAdd';
+import { RecipesButton } from '../recipes/RecipesButton';
 import { ItemRow } from './ItemRow';
 import { SortableItems } from './SortableItems';
 import { ItemEditorSheet } from './ItemEditorSheet';
@@ -105,7 +106,12 @@ export function ListScreen({ listId }: { listId: string }) {
 
       <ErrorBoundary name="Barre d'ajout">
         <AddItemBar listId={listId} existingNames={names}
-          shortcuts={!storeMode && pending.length < 5 && <ErrorBoundary name="Favoris"><FavoritesQuickAdd listId={listId} /></ErrorBoundary>} />
+          shortcuts={!storeMode && (
+            <div className="mb-2 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]" aria-label="Recettes et favoris">
+              <ErrorBoundary name="Recettes"><RecipesButton listId={listId} /></ErrorBoundary>
+              {pending.length < 5 && <ErrorBoundary name="Favoris"><FavoritesQuickAdd listId={listId} /></ErrorBoundary>}
+            </div>
+          )} />
       </ErrorBoundary>
 
       <TripSummarySheet summary={shopping.summary} onClose={shopping.close} />

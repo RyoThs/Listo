@@ -16,12 +16,13 @@ Réponds en français simple. Code complet d'abord, puis explications sans jargo
    Données : `src/db/lists.ts`, `items.ts`, `suggestions.ts`, `favorites.ts`, `cards.ts`, `backup.ts`, `sharedLists.ts`, `prices.ts` (mémoire des prix), `trips.ts` (historique des courses), `products.ts` (produits scannés), outils communs `queue.ts`.
    Scanner : `src/lib/scan/` (codes produits, Open Food Facts, lecteurs) + `src/features/scan/`. ZXing est livré dans l'appli pour le scanner (iPhone), importé pièce par pièce dans `zxingDecoder.ts` pour rester léger (~15 Ko compressé).
    Bilan et historique : `src/lib/tripSummary.ts` + `src/features/store-mode/`.
+   Recettes : `src/lib/recipes/` (catalog.ts, scale.ts, measure.ts, ingredientsFr.ts, mealdb.ts) + `src/db/recipes.ts` (packs, ajout tout ou rien) + `src/features/recipes/` (un onglet = une cloison).
    Lien « Ouvrir dans LISTO » : `src/lib/listLink.ts` (fabrication + vérification du lien), écrans dans `src/features/received/`.
    `actions.ts` ne fait que tout regrouper. Écrans : un dossier par fonctionnalité dans `src/features/`.
 5. **Pas de copier-coller d'interface** : réutiliser `components/ui/` (Button, Sheet, Field, Segmented, ColorPicker…).
 6. **Plusieurs écritures liées = une seule transaction** (tout ou rien).
 7. **Ne jamais faire confiance à un fichier importé** : tout passe par les fonctions `clean…` de `backup.ts`.
-8. **Ne jamais faire confiance à ce qui vient d'internet** (Open Food Facts) : nom nettoyé et raccourci, délai maximum, pas de réseau = on demande le nom.
+8. **Ne jamais faire confiance à ce qui vient d'internet** (Open Food Facts, TheMealDB) : nom nettoyé et raccourci, délai maximum, pas de réseau = on demande le nom.
 9. **Le stockage peut refuser** (iPhone en navigation privée, mémoire pleine) : toujours `try/catch`.
 
 ## TDD : le test d'abord (demandé le 2026-11-18)

@@ -9,3 +9,4 @@ export * from './sharedLists';
 export * from './prices';
 export * from './trips';
 export * from './products';
+export * from './recipes';
