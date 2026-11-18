@@ -13,6 +13,7 @@ import { ListEditorSheet } from './ListEditorSheet';
 import { FavoritesStrip } from '../favorites/FavoritesStrip';
 import { CardsStrip } from '../cards/CardsStrip';
 import { PasteListSheet } from '../received/PasteListSheet';
+import { TripsHistoryButton } from '../store-mode/TripsHistorySheet';
 import { ErrorBoundary } from '../../components/ErrorBoundary';
 
 export function ListsScreen() {
@@ -89,6 +90,7 @@ export function ListsScreen() {
             </button>
           );
         })}
+        <ErrorBoundary name="Mes courses passées"><TripsHistoryButton /></ErrorBoundary>
         <p className="pt-6 text-center text-xs text-muted">LISTO v{__APP_VERSION__}</p>
       </main>
 

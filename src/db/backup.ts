@@ -1,5 +1,5 @@
 import { db } from './db';
-import type { Favorite, LoyaltyCard, ShoppingItem, ShoppingList, Suggestion, Unit } from '../types';
+import type { Favorite, KnownProduct, LoyaltyCard, ShoppingItem, ShoppingList, Suggestion, Trip, Unit } from '../types';
 
 // Sauvegarde dans un fichier, et restauration depuis ce fichier.
 // La restauration FUSIONNE : elle n'efface jamais rien. Pour chaque fiche, la version la plus récente gagne.
@@ -16,10 +16,13 @@ export interface BackupFile {
   suggestions: Suggestion[];
   // Ajout v0.5 : les cartes de fidélité (les anciennes sauvegardes n'en ont pas).
   cards?: LoyaltyCard[];
+  // Ajouts v0.9 : l'historique des courses et les produits scannés.
+  trips?: Trip[];
+  products?: KnownProduct[];
 }
 
 /** Une sauvegarde vérifiée, prête à être fusionnée. */
-export type ParsedBackup = Omit<BackupFile, 'cards'> & { cards: LoyaltyCard[] };
+export type ParsedBackup = Omit<BackupFile, 'cards' | 'trips' | 'products'> & { cards: LoyaltyCard[]; trips: Trip[]; products: KnownProduct[] };
 
 export async function buildBackup(): Promise<BackupFile> {
   const alive = <T extends { deletedAt?: number }>(rows: T[]) => rows.filter((r) => !r.deletedAt);
@@ -32,6 +35,8 @@ export async function buildBackup(): Promise<BackupFile> {
     favorites: alive(await db.favorites.toArray()),
     suggestions: await db.suggestions.toArray(),
     cards: alive(await db.cards.toArray()),
+    trips: await db.trips.toArray(),
+    products: await db.products.toArray(),
   };
 }
 
@@ -82,7 +87,27 @@ function cleanFavorite(r: any): Favorite | null {
 
 function cleanSuggestion(r: any): Suggestion | null {
   if (!r || !isStr(r.key) || !isStr(r.name)) return null;
-  return { key: r.key, name: r.name, category: isStr(r.category) ? r.category : 'other', unit: optUnit(r.unit), count: isNum(r.count) ? r.count : 1, lastUsed: isNum(r.lastUsed) ? r.lastUsed : 0 };
+  const unitPrice = optNum(r.unitPrice);
+  return {
+    key: r.key, name: r.name, category: isStr(r.category) ? r.category : 'other', unit: optUnit(r.unit), count: isNum(r.count) ? r.count : 1, lastUsed: isNum(r.lastUsed) ? r.lastUsed : 0,
+    ...(unitPrice !== undefined ? { unitPrice, priceUnit: optUnit(r.priceUnit) } : {}),
+  };
+}
+
+function cleanTrip(r: any): Trip | null {
+  if (!r || !isStr(r.id) || !isNum(r.endedAt)) return null;
+  return {
+    id: r.id, listId: isStr(r.listId) ? r.listId : '', listTitle: isStr(r.listTitle) ? r.listTitle.slice(0, 80) : 'Liste',
+    startedAt: isNum(r.startedAt) ? r.startedAt : r.endedAt, endedAt: r.endedAt,
+    taken: isNum(r.taken) && r.taken >= 0 ? Math.floor(r.taken) : 0,
+    forgotten: Array.isArray(r.forgotten) ? r.forgotten.filter(isStr).map((n: string) => n.slice(0, 120)).slice(0, 150) : [],
+    spent: optNum(r.spent),
+  };
+}
+
+function cleanProduct(r: any): KnownProduct | null {
+  if (!r || typeof r.code !== 'string' || !/^\d{8,14}$/.test(r.code) || !isStr(r.name)) return null;
+  return { code: r.code, name: r.name.slice(0, 120), category: isStr(r.category) ? r.category : 'other', updatedAt: isNum(r.updatedAt) ? r.updatedAt : 0 };
 }
 
 function cleanCard(r: any): LoyaltyCard | null {
@@ -109,7 +134,7 @@ export function parseBackup(text: string): ParsedBackup {
     app: 'listo', format: data.format, exportedAt: isNum(data.exportedAt) ? data.exportedAt : 0,
     lists: pick(data.lists, cleanList), items: pick(data.items, cleanItem),
     favorites: pick(data.favorites, cleanFavorite), suggestions: pick(data.suggestions, cleanSuggestion),
-    cards: pick(data.cards, cleanCard),
+    cards: pick(data.cards, cleanCard), trips: pick(data.trips, cleanTrip), products: pick(data.products, cleanProduct),
   };
 }
 
@@ -120,7 +145,7 @@ export async function importBackup(backup: ParsedBackup): Promise<ImportResult> 
   const result: ImportResult = { lists: 0, items: 0, favorites: 0, cards: 0 };
   const knownLists = new Set([...(await db.lists.toCollection().primaryKeys()), ...backup.lists.map((l) => l.id)]);
 
-  await db.transaction('rw', [db.lists, db.items, db.favorites, db.suggestions, db.cards], async () => {
+  await db.transaction('rw', [db.lists, db.items, db.favorites, db.suggestions, db.cards, db.trips, db.products], async () => {
     // Nouveau téléphone : la liste de départ créée automatiquement (vide, jamais modifiée)
     // ferait doublon avec la liste du même nom dans la sauvegarde. On la retire : elle ne contient rien.
     // Règle stricte : vide + jamais modifiée + même nom qu'une liste de la sauvegarde.
@@ -152,6 +177,12 @@ export async function importBackup(backup: ParsedBackup): Promise<ImportResult> 
     for (const s of backup.suggestions) {
       const local = await db.suggestions.get(s.key);
       if (!local || s.count > local.count) await db.suggestions.put(s);
+    }
+    // Historique : on ajoute seulement les courses qui manquent (jamais de doublon).
+    for (const t of backup.trips) if (!(await db.trips.get(t.id))) await db.trips.put(t);
+    for (const p of backup.products) {
+      const local = await db.products.get(p.code);
+      if (!local || p.updatedAt > local.updatedAt) await db.products.put(p);
     }
   });
   return result;

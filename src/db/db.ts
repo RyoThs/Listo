@@ -1,5 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie';
-import type { Favorite, LoyaltyCard, ShoppingItem, ShoppingList, Suggestion, SyncOp } from '../types';
+import type { Favorite, KnownProduct, LoyaltyCard, ShoppingItem, ShoppingList, Suggestion, SyncOp, Trip } from '../types';
 import { newId } from '../lib/id';
 
 // La base de données qui vit DANS le téléphone (IndexedDB). Elle marche sans internet.
@@ -10,6 +10,8 @@ export class ListoDB extends Dexie {
   syncQueue!: EntityTable<SyncOp, 'id'>;
   favorites!: EntityTable<Favorite, 'id'>;
   cards!: EntityTable<LoyaltyCard, 'id'>;
+  trips!: EntityTable<Trip, 'id'>;
+  products!: EntityTable<KnownProduct, 'code'>;
 
   constructor(name = 'listo') {
     super(name);
@@ -33,6 +35,11 @@ export class ListoDB extends Dexie {
     this.version(4).stores({}).upgrade((tx) =>
       tx.table('cards').toCollection().modify((card: Record<string, unknown>) => { delete card.photo; }),
     );
+    // Version 5 (2026-11-18) : historique des courses (bilans) et produits scannés.
+    this.version(5).stores({
+      trips: 'id, endedAt',
+      products: 'code, updatedAt',
+    });
 
     // Au tout premier lancement : une liste prête à l'emploi.
     this.on('populate', (tx) => {

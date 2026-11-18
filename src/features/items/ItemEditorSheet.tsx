@@ -32,12 +32,15 @@ export function ItemEditorSheet({ item, onClose }: { item: ShoppingItem | null; 
   const save = async () => {
     if (!item) return;
     const q = Number(quantity.replace(',', '.'));
+    const newPrice = parsePrice(price);
+    // Prix non touché : on ne l'envoie pas, pour qu'il suive la nouvelle quantité (2 € pour 1 → 4 € pour 2).
+    const priceChanged = newPrice !== item.estimatedPrice;
     await updateItem(item.id, {
       name: name.trim() || item.name,
       category,
       quantity: Number.isFinite(q) && q > 0 ? q : item.quantity,
       unit,
-      estimatedPrice: parsePrice(price),
+      ...(priceChanged ? { estimatedPrice: newPrice } : {}),
     });
     onClose();
   };
@@ -55,7 +58,7 @@ export function ItemEditorSheet({ item, onClose }: { item: ShoppingItem | null; 
           </div>
         </div>
 
-        <Field label="Prix (€) – pour calculer le total" value={price} onChange={(e) => setPrice(e.target.value)} inputMode="decimal" placeholder="Ex. 2,49" className="font-mono" />
+        <Field label="Prix (€) pour cette quantité – LISTO s’en souviendra" value={price} onChange={(e) => setPrice(e.target.value)} inputMode="decimal" placeholder="Ex. 2,49" className="font-mono" />
 
         <div>
           <span className="mb-2 block text-sm font-medium text-muted">Rayon</span>

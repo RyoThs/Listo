@@ -1,6 +1,7 @@
 import { db } from './db';
 import { enqueue, markDeleted, now, restore } from './queue';
 import { guessCategory, learnCorrection, remember } from './suggestions';
+import { knownPrice, rememberPrice, scalePrice } from './prices';
 import { newId } from '../lib/id';
 import { normalize, capitalize } from '../lib/text';
 import type { ShoppingItem, Unit } from '../types';
@@ -19,11 +20,15 @@ export interface ItemDraft {
   category?: string;
 }
 
+/** L'article ajouté ; `merged` = il était déjà dans la liste, seule sa quantité a augmenté. */
+export type AddedItem = ShoppingItem & { merged?: boolean };
+
 /**
  * Ajoute un article. Si le même article est déjà dans la liste (pas encore pris),
  * on augmente sa quantité au lieu de créer un doublon.
+ * Si LISTO connaît le prix de l'article, il le pré-remplit.
  */
-export async function addItem(listId: string, draft: ItemDraft): Promise<ShoppingItem | undefined> {
+export async function addItem(listId: string, draft: ItemDraft): Promise<AddedItem | undefined> {
   const name = capitalize(draft.name.replace(/\s+/g, ' '));
   if (!name) return undefined;
   const category = draft.category ?? (await guessCategory(name));
@@ -37,15 +42,17 @@ export async function addItem(listId: string, draft: ItemDraft): Promise<Shoppin
 
     if (same) {
       const quantity = same.quantity + (draft.quantity ?? 1);
-      await db.items.update(same.id, { quantity, updatedAt: t });
+      const estimatedPrice = same.estimatedPrice === undefined ? undefined : scalePrice(same.estimatedPrice, same.quantity, quantity);
+      await db.items.update(same.id, { quantity, estimatedPrice, updatedAt: t });
       await enqueue('items', same.id, 'put');
       await remember(name, same.category, same.unit);
-      return { ...same, quantity, updatedAt: t };
+      return { ...same, quantity, estimatedPrice, updatedAt: t, merged: true };
     }
 
     const item: ShoppingItem = {
       id: newId(), listId, name, category,
       quantity: draft.quantity ?? 1, unit: draft.unit,
+      estimatedPrice: await knownPrice(name, draft.quantity ?? 1, draft.unit),
       isCompleted: false, createdAt: t, updatedAt: t,
       order: items.reduce((m, i) => Math.max(m, i.order), -1) + 1,
     };
@@ -56,14 +63,24 @@ export async function addItem(listId: string, draft: ItemDraft): Promise<Shoppin
   });
 }
 
+/**
+ * Modifie un article.
+ * - Quantité changée sans nouveau prix → le prix suit (2 € pour 1 → 4 € pour 2).
+ * - Prix donné → LISTO le retient pour la prochaine fois.
+ */
 export async function updateItem(id: string, changes: Partial<Omit<ShoppingItem, 'id' | 'listId' | 'createdAt'>>) {
   await db.transaction('rw', db.items, db.suggestions, db.syncQueue, async () => {
-    await db.items.update(id, { ...changes, updatedAt: now() });
-    await enqueue('items', id, 'put');
-    if (changes.category || changes.unit) {
-      const item = await db.items.get(id);
-      if (item) await learnCorrection(item.name, item.category, item.unit);
+    const before = await db.items.get(id);
+    if (!before) return;
+    const next = { ...changes };
+    if (next.quantity !== undefined && !('estimatedPrice' in next) && before.estimatedPrice !== undefined) {
+      next.estimatedPrice = scalePrice(before.estimatedPrice, before.quantity, next.quantity);
     }
+    await db.items.update(id, { ...next, updatedAt: now() });
+    await enqueue('items', id, 'put');
+    const item = { ...before, ...next };
+    if (changes.category || changes.unit) await learnCorrection(item.name, item.category, item.unit);
+    if (changes.estimatedPrice !== undefined) await rememberPrice(item.name, changes.estimatedPrice, item.quantity, item.unit);
   });
 }
 

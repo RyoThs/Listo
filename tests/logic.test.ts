@@ -43,7 +43,7 @@ describe('Budget', () => {
       item({ name: 'c', estimatedPrice: 5 }),
       item({ name: 'd' }),
     ]);
-    expect(b).toEqual({ spent: 0.3, estimated: 5.3, checked: 2, total: 4, hasPrices: true });
+    expect(b).toEqual({ spent: 0.3, estimated: 5.3, checked: 2, total: 4, hasPrices: true, unpriced: 1 });
   });
 });
 

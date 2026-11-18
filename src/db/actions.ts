@@ -6,3 +6,6 @@ export * from './suggestions';
 export * from './favorites';
 export * from './cards';
 export * from './sharedLists';
+export * from './prices';
+export * from './trips';
+export * from './products';

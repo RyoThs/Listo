@@ -12,14 +12,17 @@ Réponds en français simple. Code complet d'abord, puis explications sans jargo
    Sinon il est calculé même fermé, hors de la cloison, et peut faire tomber l'écran entier (bug trouvé le 2026-11-18).
 3. **Aucune erreur silencieuse.** Les actions lancées avec `void …` qui échouent affichent « Oups, ça n'a pas marché » (`src/lib/errors.ts`).
    Les tâches de fond se lancent avec `startSafely(...)`.
-4. **Un sujet = un fichier.** Code-barres : `src/lib/barcode/` (un fichier par format, vérifiés par la « caisse virtuelle » ZXing dans `tests/barcode.test.ts`, outil de test seulement).
-   Données : `src/db/lists.ts`, `items.ts`, `suggestions.ts`, `favorites.ts`, `cards.ts`, `backup.ts`, `sharedLists.ts`, outils communs `queue.ts`.
+4. **Un sujet = un fichier.** Code-barres des cartes : `src/lib/barcode/` (un fichier par format, vérifiés par la « caisse virtuelle » ZXing dans `tests/barcode.test.ts`).
+   Données : `src/db/lists.ts`, `items.ts`, `suggestions.ts`, `favorites.ts`, `cards.ts`, `backup.ts`, `sharedLists.ts`, `prices.ts` (mémoire des prix), `trips.ts` (historique des courses), `products.ts` (produits scannés), outils communs `queue.ts`.
+   Scanner : `src/lib/scan/` (codes produits, Open Food Facts, lecteurs) + `src/features/scan/`. ZXing est livré dans l'appli pour le scanner (iPhone), importé pièce par pièce dans `zxingDecoder.ts` pour rester léger (~15 Ko compressé).
+   Bilan et historique : `src/lib/tripSummary.ts` + `src/features/store-mode/`.
    Lien « Ouvrir dans LISTO » : `src/lib/listLink.ts` (fabrication + vérification du lien), écrans dans `src/features/received/`.
    `actions.ts` ne fait que tout regrouper. Écrans : un dossier par fonctionnalité dans `src/features/`.
 5. **Pas de copier-coller d'interface** : réutiliser `components/ui/` (Button, Sheet, Field, Segmented, ColorPicker…).
 6. **Plusieurs écritures liées = une seule transaction** (tout ou rien).
 7. **Ne jamais faire confiance à un fichier importé** : tout passe par les fonctions `clean…` de `backup.ts`.
-8. **Le stockage peut refuser** (iPhone en navigation privée, mémoire pleine) : toujours `try/catch`.
+8. **Ne jamais faire confiance à ce qui vient d'internet** (Open Food Facts) : nom nettoyé et raccourci, délai maximum, pas de réseau = on demande le nom.
+9. **Le stockage peut refuser** (iPhone en navigation privée, mémoire pleine) : toujours `try/catch`.
 
 ## Avant chaque envoi
 - `npm test` (Vitest) et `npm run build` doivent passer.

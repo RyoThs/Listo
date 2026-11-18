@@ -16,6 +16,9 @@ import { ErrorBoundary } from '../../components/ErrorBoundary';
 import { FavoritePickerSheet } from '../favorites/FavoritePickerSheet';
 import { ListEditorSheet } from '../lists/ListEditorSheet';
 import { BudgetBar } from '../store-mode/BudgetBar';
+import { TripSummarySheet } from '../store-mode/TripSummarySheet';
+import { useFinishShopping } from '../store-mode/useFinishShopping';
+import { FavoritesQuickAdd } from '../favorites/FavoritesQuickAdd';
 import { ItemRow } from './ItemRow';
 import { SortableItems } from './SortableItems';
 import { ItemEditorSheet } from './ItemEditorSheet';
@@ -34,8 +37,12 @@ export function ListScreen({ listId }: { listId: string }) {
   const [renaming, setRenaming] = useState(false);
   const [pickingFavorite, setPickingFavorite] = useState(false);
 
+  const shopping = useFinishShopping(list, items);
+
   // Bouton Retour d'Android : revient à l'écran des listes.
   useBackHandler(true, () => openList(null));
+  // En mode Magasin, Retour termine d'abord les courses (et affiche le bilan).
+  useBackHandler(storeMode, shopping.finish);
 
   const mode = list?.sortMode ?? 'category';
   const { pending, done } = useMemo(() => sortItems(items, mode), [items, mode]);
@@ -73,7 +80,7 @@ export function ListScreen({ listId }: { listId: string }) {
         </button>
         <IconButton label="Envoyer la liste" onClick={() => void sendList()}><Send size={20} /></IconButton>
         <IconButton label="Options d'affichage" onClick={() => setOptions(true)}><SlidersHorizontal size={21} /></IconButton>
-        <button onClick={() => setStoreMode(!storeMode)} aria-pressed={storeMode} aria-label="Magasin"
+        <button onClick={() => (storeMode ? shopping.finish() : setStoreMode(true))} aria-pressed={storeMode} aria-label="Magasin"
           className="inline-flex min-h-10 min-w-10 items-center justify-center gap-1.5 rounded-full border border-line px-3 text-sm font-semibold max-[400px]:px-2.5 aria-pressed:border-sage aria-pressed:bg-sage aria-pressed:text-white">
           <ShoppingCart size={16} /> <span className="max-[400px]:sr-only">Magasin</span>
         </button>
@@ -83,7 +90,10 @@ export function ListScreen({ listId }: { listId: string }) {
         <ErrorBoundary name="Budget">
           {storeMode && <div className="mb-3"><BudgetBar budget={budget} /></div>}
           {!storeMode && budget.hasPrices && (
-            <p className="mb-2 px-1 font-mono text-sm text-muted">Total prévu : {formatPrice(budget.estimated)}</p>
+            <p className="mb-2 px-1 font-mono text-sm text-muted">
+              Total prévu : environ {formatPrice(budget.estimated)}
+              {budget.unpriced > 0 && ` · ${budget.unpriced} sans prix`}
+            </p>
           )}
         </ErrorBoundary>
 
@@ -94,9 +104,11 @@ export function ListScreen({ listId }: { listId: string }) {
       </main>
 
       <ErrorBoundary name="Barre d'ajout">
-        <AddItemBar listId={listId} existingNames={names} />
+        <AddItemBar listId={listId} existingNames={names}
+          shortcuts={!storeMode && pending.length < 5 && <ErrorBoundary name="Favoris"><FavoritesQuickAdd listId={listId} /></ErrorBoundary>} />
       </ErrorBoundary>
 
+      <TripSummarySheet summary={shopping.summary} onClose={shopping.close} />
       <ItemEditorSheet item={editing} onClose={() => setEditing(null)} />
       <ListEditorSheet open={renaming} list={list} onClose={() => setRenaming(false)} />
       <FavoritePickerSheet open={pickingFavorite} listId={listId} onClose={() => setPickingFavorite(false)} />

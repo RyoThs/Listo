@@ -13,6 +13,8 @@ const safeStorage: StateStorage = {
 interface UIState {
   currentListId: string | null;
   storeMode: boolean;
+  /** Heure d'entrée en mode Magasin (pour la durée des courses dans le bilan). */
+  storeStartedAt: number | null;
   completedDisplay: 'dim' | 'hide';
   toast: string | null;
   showToast: (message: string) => void;
@@ -31,6 +33,7 @@ export const useUI = create<UIState>()(
     (set) => ({
       currentListId: null,
       storeMode: false,
+      storeStartedAt: null,
       completedDisplay: 'dim',
       toast: null,
       showToast: (message) => {
@@ -46,8 +49,8 @@ export const useUI = create<UIState>()(
       clearUndo: () => set({ undo: null }),
       lastBackupAt: null,
       markBackup: () => set({ lastBackupAt: Date.now() }),
-      openList: (id) => set({ currentListId: id, storeMode: false }),
-      setStoreMode: (on) => set({ storeMode: on }),
+      openList: (id) => set({ currentListId: id, storeMode: false, storeStartedAt: null }),
+      setStoreMode: (on) => set({ storeMode: on, storeStartedAt: on ? Date.now() : null }),
       setCompletedDisplay: (v) => set({ completedDisplay: v }),
     }),
     { name: 'listo-ui', storage: createJSONStorage(() => safeStorage), partialize: (s) => ({ completedDisplay: s.completedDisplay, lastBackupAt: s.lastBackupAt }) },

@@ -60,6 +60,10 @@ export interface Suggestion {
   unit?: Unit;
   count: number;
   lastUsed: number;
+  /** Dernier prix payé pour 1 unité (1 pièce, 1 kg, 1 L…), pour pré-remplir le prix la fois suivante. */
+  unitPrice?: number;
+  /** L'unité dans laquelle ce prix a été noté (le prix au kg ne sert pas pour des pièces). */
+  priceUnit?: Unit;
 }
 
 /** Un changement en attente d'envoi (quand le partage en ligne existera). */
@@ -82,4 +86,24 @@ export interface LoyaltyCard {
   createdAt: number;
   updatedAt: number;
   deletedAt?: number;
+}
+
+/** Le bilan d'une course (enregistré en quittant le mode Magasin). */
+export interface Trip {
+  id: string;
+  listId: string;
+  listTitle: string;
+  startedAt: number;
+  endedAt: number;
+  taken: number;     // articles dans le panier
+  forgotten: string[]; // noms des articles pas pris
+  spent?: number;    // total des articles pris qui ont un prix
+}
+
+/** Un produit déjà scanné : son code-barres et le nom choisi (marche ensuite sans internet). */
+export interface KnownProduct {
+  code: string;
+  name: string;
+  category: string;
+  updatedAt: number;
 }
