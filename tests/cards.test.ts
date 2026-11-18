@@ -67,3 +67,19 @@ describe('Cartes de fidélité', () => {
     expect(parseBackup(bad).cards.map((c) => c.id)).toEqual(['c']);
   });
 });
+
+describe('Carte avec numéro (code-barres généré)', () => {
+  it('enregistre le format choisi, « automatique » n’est pas stocké, et la sauvegarde le garde', async () => {
+    const a = await saveCard({ name: 'Auchan', color: '#111', number: '4006381333931', format: 'auto' });
+    const b = await saveCard({ name: 'Lidl', color: '#222', number: '4006381333931', format: 'code128' });
+    expect((await db.cards.get(a.id))!.format).toBeUndefined();
+    expect((await db.cards.get(b.id))!.format).toBe('code128');
+    const text = JSON.stringify(await buildBackup());
+    await db.delete(); await db.open();
+    await importBackup(parseBackup(text));
+    expect((await db.cards.get(b.id))!.format).toBe('code128');
+    // un format inconnu dans un fichier importé est ignoré
+    const bad = JSON.stringify({ app: 'listo', format: 1, lists: [], items: [], favorites: [], suggestions: [], cards: [{ id: 'x', name: 'X', number: '1', format: 'qr<script>' }] });
+    expect(parseBackup(bad).cards[0].format).toBeUndefined();
+  });
+});

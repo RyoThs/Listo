@@ -9,7 +9,7 @@ Listes de courses intelligentes, installables sur **Android** et **iPhone**, qui
 - Saisie à la voix (micro), boutons + / −, unités (unité, kg, g, L).
 - Tri : par rayon, A → Z, ou ton ordre (glisser-déposer avec la poignée ⋮⋮).
 - Envoyer la liste par SMS, WhatsApp ou e-mail (bouton ✈️ en haut de la liste) : les articles à prendre, rangés par rayon.
-- Cartes de fidélité : ajoute la photo de ta carte (galerie ou appareil photo) et, si tu veux, son numéro. À la caisse, un toucher sur l’accueil l’affiche en grand sur fond blanc, écran allumé, même sans internet. Incluses dans la sauvegarde.
+- Cartes de fidélité : entre le numéro de ta carte, LISTO dessine le code-barres (EAN-13 ou Code 128, choisi automatiquement). À la caisse, un toucher sur l’accueil l’affiche en grand sur fond blanc, écran allumé, même sans internet. Photo facultative. Incluses dans la sauvegarde.
 - Mode magasin : grosses lignes, un toucher pour cocher, articles pris grisés ou masqués, total dépensé en direct.
 - **Listes favorites** : « Enregistrer en favori » dans les options d'une liste ; sur l'accueil, un toucher sur un favori crée une liste toute prête ; « Ajouter un favori » verse ses articles dans la liste ouverte (sans doublon).
 - **Annuler** : après une suppression (article, articles pris, liste, favori), un bandeau « Annuler » reste 6 secondes.
@@ -49,6 +49,7 @@ src/
   features/    lists, items, cards, favorites, backup, store-mode, voice, pwa
   components/  ErrorBoundary (cloison anti-panne) ; ui/ : boutons, fenêtres, champs, couleurs, choix
   lib/         rayons, saisie, tri, budget, formats, photos, partage, erreurs, outils téléphone
+  lib/barcode/ code-barres maison : ean13.ts, code128.ts (normes publiques, aucune dépendance)
 tests/         tests automatiques (Vitest + fausse base IndexedDB)
 ```
 

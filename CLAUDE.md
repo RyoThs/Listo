@@ -12,7 +12,8 @@ Réponds en français simple. Code complet d'abord, puis explications sans jargo
    Sinon il est calculé même fermé, hors de la cloison, et peut faire tomber l'écran entier (bug trouvé le 2026-11-18).
 3. **Aucune erreur silencieuse.** Les actions lancées avec `void …` qui échouent affichent « Oups, ça n'a pas marché » (`src/lib/errors.ts`).
    Les tâches de fond se lancent avec `startSafely(...)`.
-4. **Un sujet = un fichier.** Données : `src/db/lists.ts`, `items.ts`, `suggestions.ts`, `favorites.ts`, `cards.ts`, `backup.ts`, outils communs `queue.ts`.
+4. **Un sujet = un fichier.** Code-barres : `src/lib/barcode/` (un fichier par format, vérifiés par la « caisse virtuelle » ZXing dans `tests/barcode.test.ts`, outil de test seulement).
+    Données : `src/db/lists.ts`, `items.ts`, `suggestions.ts`, `favorites.ts`, `cards.ts`, `backup.ts`, outils communs `queue.ts`.
    `actions.ts` ne fait que tout regrouper. Écrans : un dossier par fonctionnalité dans `src/features/`.
 5. **Pas de copier-coller d'interface** : réutiliser `components/ui/` (Button, Sheet, Field, Segmented, ColorPicker…).
 6. **Plusieurs écritures liées = une seule transaction** (tout ou rien).

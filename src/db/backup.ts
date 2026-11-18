@@ -95,6 +95,7 @@ function cleanCard(r: any): LoyaltyCard | null {
   if (!photo && !number) return null; // une carte sans photo ni numéro ne sert à rien
   return {
     id: r.id, name: r.name.slice(0, 40), color: isStr(r.color) ? r.color : '#4E7F60', photo, number,
+    format: r.format === 'ean13' || r.format === 'code128' ? r.format : undefined,
     createdAt: isNum(r.createdAt) ? r.createdAt : Date.now(), updatedAt: isNum(r.updatedAt) ? r.updatedAt : 0,
   };
 }

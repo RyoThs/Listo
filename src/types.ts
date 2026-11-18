@@ -84,6 +84,8 @@ export interface LoyaltyCard {
   color: string;
   photo?: StoredPhoto;
   number?: string;
+  /** Format du code-barres dessiné à partir du numéro (absent = automatique). */
+  format?: 'auto' | 'ean13' | 'code128';
   createdAt: number;
   updatedAt: number;
   deletedAt?: number;
