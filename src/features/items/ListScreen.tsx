@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { ArrowLeft, ShoppingCart, SlidersHorizontal, Pencil, ListChecks, Star, CopyPlus } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, SlidersHorizontal, Pencil, ListChecks, Star, CopyPlus, Send } from 'lucide-react';
+import { buildListText, shareText } from '../../lib/shareText';
 import { db } from '../../db/db';
 import { getActiveItems, getFavoriteForList, removeCompleted, restoreItems, saveListAsFavorite, setSortMode, uncheckAll } from '../../db/actions';
 import { FavoritePickerSheet } from '../favorites/FavoritePickerSheet';
@@ -48,6 +49,17 @@ export function ListScreen({ listId }: { listId: string }) {
   useEffect(() => { if (gone) openList(null); }, [gone, openList]);
   if (!list || gone) return null;
 
+  // Envoie les articles à prendre par SMS, WhatsApp, e-mail… (menu Partager du téléphone).
+  const sendList = async () => {
+    if (!pending.length) {
+      showToast(items.length ? 'Tout est déjà dans le panier 🎉' : 'La liste est vide');
+      return;
+    }
+    const result = await shareText(list.title, buildListText(list.title, items));
+    if (result === 'copied') showToast('Liste copiée : colle-la dans ton message');
+    if (result === 'failed') showToast("Impossible d'envoyer la liste");
+  };
+
   const renderPending = () => {
     if (!pending.length) {
       return (
@@ -90,10 +102,11 @@ export function ListScreen({ listId }: { listId: string }) {
             <Pencil size={14} className="shrink-0 text-muted" />
           </span>
         </button>
+        <IconButton label="Envoyer la liste" onClick={() => void sendList()}><Send size={20} /></IconButton>
         <IconButton label="Options d'affichage" onClick={() => setOptions(true)}><SlidersHorizontal size={21} /></IconButton>
-        <button onClick={() => setStoreMode(!storeMode)} aria-pressed={storeMode}
-          className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-line px-3 text-sm font-semibold aria-pressed:border-sage aria-pressed:bg-sage aria-pressed:text-white">
-          <ShoppingCart size={16} /> Magasin
+        <button onClick={() => setStoreMode(!storeMode)} aria-pressed={storeMode} aria-label="Magasin"
+          className="inline-flex min-h-10 min-w-10 items-center justify-center gap-1.5 rounded-full border border-line px-3 text-sm max-[400px]:px-2.5 font-semibold aria-pressed:border-sage aria-pressed:bg-sage aria-pressed:text-white">
+          <ShoppingCart size={16} /> <span className="max-[400px]:sr-only">Magasin</span>
         </button>
       </header>
 

@@ -1,5 +1,5 @@
 import {
-  Apple, Croissant, Milk, Beef, Snowflake, Package, CupSoda, Bath, SprayCan, ShoppingBag,
+  Apple, Croissant, Milk, Beef, Snowflake, Package, CupSoda, Bath, SprayCan, PawPrint, ShoppingBag,
   type LucideIcon,
 } from 'lucide-react';
 import { normalize } from './text';
@@ -23,6 +23,7 @@ export const CATEGORIES: Category[] = [
   { id: 'drinks', label: 'Boissons', icon: CupSoda, color: '#A08FD1', keywords: ['eau', 'jus', 'soda', 'coca', 'biere', 'vin', 'sirop', 'limonade', 'champagne', 'cidre', 'ice tea'] },
   { id: 'hygiene', label: 'Hygiène', icon: Bath, color: '#E0A3C2', keywords: ['savon', 'shampoing', 'shampooing', 'dentifrice', 'gel douche', 'deodorant', 'coton', 'rasoir', 'mouchoir', 'papier toilette', 'couche', 'brosse a dents', 'serviette hygienique', 'creme solaire', 'lingette'] },
   { id: 'household', label: 'Maison', icon: SprayCan, color: '#9AA6A0', keywords: ['lessive', 'liquide vaisselle', 'pastille lave-vaisselle', 'eponge', 'sac poubelle', 'essuie-tout', 'sopalin', 'javel', 'nettoyant', 'ampoule', 'pile', 'adoucissant', 'aluminium', 'film alimentaire'] },
+  { id: 'pets', label: 'Animalerie', icon: PawPrint, color: '#C98B6B', keywords: ['croquette', 'patee', 'litiere', 'pour chien', 'pour chat', 'pour chiot', 'pour chaton', 'pour animaux', 'pour oiseau', 'friandise', 'chien', 'chat', 'chaton', 'chiot', 'herbe a chat', 'anti-puce', 'antipuce', 'vermifuge', 'aquarium', 'poisson rouge', 'crotte', 'os a macher', 'gamelle', 'laisse', 'collier'] },
   { id: 'other', label: 'Autre', icon: ShoppingBag, color: '#B8B2A7', keywords: [] },
 ];
 

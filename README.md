@@ -4,10 +4,11 @@ Listes de courses intelligentes, installables sur **Android** et **iPhone**, qui
 
 ## Fonctions
 - Plusieurs listes (couleur + icône), créer / renommer / supprimer.
-- Rayons devinés automatiquement (« steak haché » → Viande et poisson), et l'appli retient tes corrections.
+- Rayons devinés automatiquement (« steak haché » → Viande et poisson), et l'appli retient tes corrections. 11 rayons, dont Animalerie.
 - Saisie rapide : « 2 kg de pommes, du pain et lait » ajoute 3 articles d'un coup. Suggestions selon tes habitudes.
 - Saisie à la voix (micro), boutons + / −, unités (unité, kg, g, L).
 - Tri : par rayon, A → Z, ou ton ordre (glisser-déposer avec la poignée ⋮⋮).
+- Envoyer la liste par SMS, WhatsApp ou e-mail (bouton ✈️ en haut de la liste) : les articles à prendre, rangés par rayon.
 - Mode magasin : grosses lignes, un toucher pour cocher, articles pris grisés ou masqués, total dépensé en direct.
 - **Listes favorites** : « Enregistrer en favori » dans les options d'une liste ; sur l'accueil, un toucher sur un favori crée une liste toute prête ; « Ajouter un favori » verse ses articles dans la liste ouverte (sans doublon).
 - **Annuler** : après une suppression (article, articles pris, liste, favori), un bandeau « Annuler » reste 6 secondes.
