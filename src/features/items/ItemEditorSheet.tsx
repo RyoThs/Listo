@@ -73,7 +73,7 @@ export function ItemEditorSheet({ item, onClose }: { item: ShoppingItem | null; 
         </div>
 
         <Button type="submit" className="w-full">Enregistrer</Button>
-        <Button type="button" variant="ghost" className="w-full text-danger" onClick={async () => {
+        <Button type="button" variant="danger-ghost" className="w-full" onClick={async () => {
             if (item) {
               await deleteItem(item.id);
               const id = item.id;

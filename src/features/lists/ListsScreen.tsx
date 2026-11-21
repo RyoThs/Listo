@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { Plus, ChevronRight, Settings } from 'lucide-react';
+import { Plus, MoreHorizontal, Settings } from 'lucide-react';
 import { BackupSheet, BACKUP_REMINDER_DAYS, daysSince } from '../backup/BackupSheet';
 import { IconButton } from '../../components/ui/Button';
 import { db } from '../../db/db';
@@ -22,9 +22,11 @@ export function ListsScreen() {
   const [creating, setCreating] = useState(false);
   const [backup, setBackup] = useState(false);
   const [pasting, setPasting] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   // useLiveQuery : l'écran se met à jour tout seul dès que la base change.
   const lists = useLiveQuery(getActiveLists, []);
+  const editingList = lists?.find((l) => l.id === editingId);
   const counts = useLiveQuery(async () => {
     const items = (await db.items.toArray()).filter((i) => !i.deletedAt);
     const map: Record<string, { left: number; total: number }> = {};
@@ -70,8 +72,10 @@ export function ListsScreen() {
           const c = counts?.[l.id] ?? { left: 0, total: 0 };
           const done = c.total ? (c.total - c.left) / c.total : 0;
           return (
-            <button key={l.id} onClick={() => openList(l.id)}
-              className="flex w-full items-center gap-3 rounded-2xl border border-line bg-card p-3.5 text-left shadow-[0_1px_0_rgba(0,0,0,0.03)] active:scale-[0.99]">
+            // Deux boutons côte à côte (jamais un bouton dans un bouton) : ouvrir la liste, ou ⋯ pour la modifier / supprimer.
+            <div key={l.id} className="relative">
+            <button onClick={() => openList(l.id)}
+              className="flex w-full items-center gap-3 rounded-2xl border border-line bg-card p-3.5 pr-14 text-left shadow-[0_1px_0_rgba(0,0,0,0.03)] active:scale-[0.99]">
               <span className="flex size-12 shrink-0 items-center justify-center rounded-xl text-white" style={{ background: l.color }}>
                 <Icon size={22} />
               </span>
@@ -86,8 +90,12 @@ export function ListsScreen() {
                   </span>
                 )}
               </span>
-              <ChevronRight className="text-muted" size={20} />
             </button>
+            <IconButton label={`Options de la liste ${l.title}`} onClick={() => setEditingId(l.id)}
+              className="absolute top-1/2 right-1.5 -translate-y-1/2 text-muted">
+              <MoreHorizontal size={22} />
+            </IconButton>
+            </div>
           );
         })}
         <ErrorBoundary name="Mes courses passées"><TripsHistoryButton /></ErrorBoundary>
@@ -101,6 +109,7 @@ export function ListsScreen() {
 
       <ListEditorSheet open={creating} onClose={() => setCreating(false)}
         onPasteReceived={() => { setCreating(false); setPasting(true); }} />
+      <ListEditorSheet open={!!editingList} list={editingList} onClose={() => setEditingId(null)} />
       <PasteListSheet open={pasting} onClose={() => setPasting(false)} />
       <BackupSheet open={backup} onClose={() => setBackup(false)} />
     </div>

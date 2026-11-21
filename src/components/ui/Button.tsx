@@ -1,11 +1,14 @@
 import type { ButtonHTMLAttributes } from 'react';
 
-type Variant = 'primary' | 'outline' | 'ghost' | 'danger';
+type Variant = 'primary' | 'outline' | 'ghost' | 'danger' | 'danger-ghost' | 'danger-outline';
 const styles: Record<Variant, string> = {
   primary: 'bg-sage text-white active:bg-sage-dark',
   outline: 'border border-line bg-card text-ink active:bg-cream',
   ghost: 'text-ink active:bg-line/60',
   danger: 'bg-danger text-white active:opacity-90',
+  // Rouge discret (supprimer, retirer) : un style à part, car « text-danger » ajouté par-dessus ne gagnait pas toujours.
+  'danger-ghost': 'text-danger active:bg-danger/10',
+  'danger-outline': 'border border-line bg-card text-danger active:bg-cream',
 };
 
 export function Button({ variant = 'primary', className = '', ...props }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant }) {

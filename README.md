@@ -3,7 +3,7 @@
 Listes de courses intelligentes, installables sur **Android** et **iPhone**, qui marchent **sans internet**.
 
 ## Fonctions
-- Plusieurs listes (couleur + icône), créer / renommer / supprimer.
+- Plusieurs listes (couleur + icône), créer / renommer / supprimer : bouton ⋯ sur chaque liste de l’accueil, ou « Options de la liste » (confirmation + Annuler).
 - Rayons devinés automatiquement (« steak haché » → Viande et poisson), et l'appli retient tes corrections. 11 rayons, dont Animalerie.
 - Saisie rapide : « 2 kg de pommes, du pain et lait » ajoute 3 articles d'un coup. Suggestions selon tes habitudes.
 - Saisie à la voix (micro), boutons + / −, unités (unité, kg, g, L).

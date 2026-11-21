@@ -4,6 +4,7 @@ import { Button } from '../../components/ui/Button';
 import { Segmented } from '../../components/ui/Segmented';
 import { removeCompleted, restoreItems, saveListAsFavorite, setSortMode, uncheckAll } from '../../db/actions';
 import { useUI } from '../../stores/ui';
+import { DeleteListButton } from '../lists/DeleteListButton';
 import type { SortMode } from '../../types';
 
 const SORTS: { id: SortMode; label: string }[] = [
@@ -21,6 +22,7 @@ interface Props {
   open: boolean;
   onClose: () => void;
   listId: string;
+  listTitle: string;
   mode: SortMode;
   itemCount: number;
   doneCount: number;
@@ -28,8 +30,8 @@ interface Props {
   onPickFavorite: () => void;
 }
 
-/** Fenêtre « Affichage » d'une liste : tri, articles pris, favori, tout décocher, retirer les pris. */
-export function ListOptionsSheet({ open, onClose, listId, mode, itemCount, doneCount, hasFavorite, onPickFavorite }: Props) {
+/** Fenêtre « Options de la liste » : tri, articles pris, favori, tout décocher, retirer les pris, supprimer la liste. */
+export function ListOptionsSheet({ open, onClose, listId, listTitle, mode, itemCount, doneCount, hasFavorite, onPickFavorite }: Props) {
   const { completedDisplay, setCompletedDisplay, showToast, offerUndo } = useUI();
 
   const saveFavorite = async () => {
@@ -45,7 +47,7 @@ export function ListOptionsSheet({ open, onClose, listId, mode, itemCount, doneC
   };
 
   return (
-    <Sheet open={open} onClose={onClose} title="Affichage">
+    <Sheet open={open} onClose={onClose} title="Options de la liste">
       <div className="space-y-5 pb-2">
         <div>
           <span className="mb-2 block text-sm font-medium text-muted">Trier</span>
@@ -71,9 +73,12 @@ export function ListOptionsSheet({ open, onClose, listId, mode, itemCount, doneC
           <Button variant="outline" disabled={!doneCount} onClick={() => { void uncheckAll(listId); onClose(); }}>
             <ListChecks size={18} /> Tout décocher
           </Button>
-          <Button variant="outline" className="text-danger" disabled={!doneCount} onClick={() => void removeDone()}>
+          <Button variant="danger-outline" disabled={!doneCount} onClick={() => void removeDone()}>
             Retirer les pris
           </Button>
+        </div>
+        <div className="border-t border-line pt-3">
+          <DeleteListButton listId={listId} title={listTitle} onDeleted={onClose} />
         </div>
       </div>
     </Sheet>

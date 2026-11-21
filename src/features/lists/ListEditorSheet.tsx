@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Trash2, ClipboardPaste } from 'lucide-react';
+import { ClipboardPaste } from 'lucide-react';
 import { Sheet } from '../../components/ui/Sheet';
 import { Field } from '../../components/ui/Field';
 import { Button } from '../../components/ui/Button';
 import { ColorPicker } from '../../components/ui/ColorPicker';
 import { LIST_COLORS, LIST_ICONS } from '../../lib/listIcons';
-import { createList, deleteList, restoreList, updateList } from '../../db/actions';
-import { useUI } from '../../stores/ui';
+import { createList, updateList } from '../../db/actions';
+import { DeleteListButton } from './DeleteListButton';
 import type { ShoppingList } from '../../types';
 
 /** Créer une liste (list absent) ou la modifier / supprimer (list présent). */
@@ -18,15 +18,12 @@ export function ListEditorSheet({ open, list, onClose, onDeleted, onPasteReceive
   const [title, setTitle] = useState('');
   const [color, setColor] = useState(LIST_COLORS[0]);
   const [icon, setIcon] = useState('basket');
-  const [confirm, setConfirm] = useState(false);
-  const offerUndo = useUI((s) => s.offerUndo);
 
   useEffect(() => {
     if (!open) return;
     setTitle(list?.title ?? '');
     setColor(list?.color ?? LIST_COLORS[0]);
     setIcon(list?.icon ?? 'basket');
-    setConfirm(false);
   }, [open, list]);
 
   const save = async () => {
@@ -63,19 +60,7 @@ export function ListEditorSheet({ open, list, onClose, onDeleted, onPasteReceive
           </Button>
         )}
 
-        {list && (
-          <Button type="button" variant={confirm ? 'danger' : 'ghost'} className={`w-full ${confirm ? '' : 'text-danger'}`}
-            onClick={async () => {
-              if (!confirm) return setConfirm(true);
-              await deleteList(list.id);
-              const { id, title } = list;
-              onClose();
-              onDeleted?.();
-              offerUndo(`Liste « ${title} » supprimée`, () => restoreList(id));
-            }}>
-            <Trash2 size={18} /> {confirm ? 'Toucher encore pour supprimer' : 'Supprimer la liste'}
-          </Button>
-        )}
+        {list && <DeleteListButton listId={list.id} title={list.title} onDeleted={() => { onClose(); onDeleted?.(); }} />}
       </form>
     </Sheet>
   );

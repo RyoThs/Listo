@@ -19,6 +19,7 @@ Réponds en français simple. Code complet d'abord, puis explications sans jargo
    Bilan et historique : `src/lib/tripSummary.ts` + `src/features/store-mode/`.
    Recettes : `src/lib/recipes/` (catalog.ts, scale.ts, measure.ts, ingredientsFr.ts, mealdb.ts) + `src/db/recipes.ts` (packs, ajout tout ou rien) + `src/features/recipes/` (un onglet = une cloison).
    Lien « Ouvrir dans LISTO » : `src/lib/listLink.ts` (fabrication + vérification du lien), écrans dans `src/features/received/`.
+   Supprimer une liste : un seul composant `src/features/lists/DeleteListButton.tsx` (2 touchers + « Annuler »), utilisé par la fenêtre ⋯ de l’accueil (`ListEditorSheet`) et par `ListOptionsSheet`. Boutons rouges : variantes `danger-ghost` / `danger-outline` de `Button` (ne pas ajouter `text-danger` par-dessus un autre style, il perd).
    `actions.ts` ne fait que tout regrouper. Écrans : un dossier par fonctionnalité dans `src/features/`.
 5. **Pas de copier-coller d'interface** : réutiliser `components/ui/` (Button, Sheet, Field, Segmented, ColorPicker…).
 6. **Plusieurs écritures liées = une seule transaction** (tout ou rien).

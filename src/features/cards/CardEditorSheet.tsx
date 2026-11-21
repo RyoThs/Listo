@@ -86,7 +86,7 @@ function CardEditor({ card, onClose }: Omit<Props, 'open'>) {
       {!canSave && name.trim() && !number.trim() && <p className="text-sm text-muted">Tape le numéro de la carte pour l'enregistrer.</p>}
       <Button type="submit" className="w-full" disabled={!canSave}>{card ? 'Enregistrer' : 'Ajouter la carte'}</Button>
       {card && (
-        <Button type="button" variant={confirm ? 'danger' : 'ghost'} className={`w-full ${confirm ? '' : 'text-danger'}`} onClick={() => void remove()}>
+        <Button type="button" variant={confirm ? 'danger' : 'danger-ghost'} className="w-full" onClick={() => void remove()}>
           <Trash2 size={18} /> {confirm ? 'Confirmer la suppression' : 'Supprimer la carte'}
         </Button>
       )}

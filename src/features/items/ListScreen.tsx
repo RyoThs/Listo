@@ -80,7 +80,7 @@ export function ListScreen({ listId }: { listId: string }) {
           </span>
         </button>
         <IconButton label="Envoyer la liste" onClick={() => void sendList()}><Send size={20} /></IconButton>
-        <IconButton label="Options d'affichage" onClick={() => setOptions(true)}><SlidersHorizontal size={21} /></IconButton>
+        <IconButton label="Options de la liste" onClick={() => setOptions(true)}><SlidersHorizontal size={21} /></IconButton>
         <button onClick={() => (storeMode ? shopping.finish() : setStoreMode(true))} aria-pressed={storeMode} aria-label="Magasin"
           className="inline-flex min-h-10 min-w-10 items-center justify-center gap-1.5 rounded-full border border-line px-3 text-sm font-semibold max-[400px]:px-2.5 aria-pressed:border-sage aria-pressed:bg-sage aria-pressed:text-white">
           <ShoppingCart size={16} /> <span className="max-[400px]:sr-only">Magasin</span>
@@ -118,7 +118,7 @@ export function ListScreen({ listId }: { listId: string }) {
       <ItemEditorSheet item={editing} onClose={() => setEditing(null)} />
       <ListEditorSheet open={renaming} list={list} onClose={() => setRenaming(false)} />
       <FavoritePickerSheet open={pickingFavorite} listId={listId} onClose={() => setPickingFavorite(false)} />
-      <ListOptionsSheet open={options} onClose={() => setOptions(false)} listId={listId} mode={mode}
+      <ListOptionsSheet open={options} onClose={() => setOptions(false)} listId={listId} listTitle={list.title} mode={mode}
         itemCount={items.length} doneCount={done.length} hasFavorite={!!favorite} onPickFavorite={() => setPickingFavorite(true)} />
     </div>
   );
