@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, RotateCw, Pencil } from 'lucide-react';
 import { useBackHandler } from '../../lib/backButton';
 import { makeBarcode } from '../../lib/barcode';
@@ -22,7 +23,8 @@ function CardScreen({ card, onClose, onEdit }: { card: LoyaltyCard; onClose: () 
   const [turned, setTurned] = useState(false);
   const hasBarcode = !!card.number && !!makeBarcode(card.number, card.format);
 
-  return (
+  // Posée directement sur <body> : rien autour ne peut la décaler ni passer par-dessus.
+  return createPortal(
     <div className="pt-safe pb-safe fixed inset-0 z-50 flex flex-col bg-white text-ink" role="dialog" aria-modal="true" aria-label={`Carte ${card.name}`}>
       {/* En-tête au-dessus du code-barres (même tourné), un peu éloigné du bord du haut réservé par iOS. */}
       <div className="relative z-10 mt-1 flex items-center gap-2 bg-white px-3 py-2">
@@ -53,6 +55,7 @@ function CardScreen({ card, onClose, onEdit }: { card: LoyaltyCard; onClose: () 
         {/* Grand bouton à portée de pouce : la croix en haut à droite est loin sur un grand téléphone. */}
         <Button className="col-span-2 min-h-14 text-base" onClick={onClose} aria-label="Fermer la carte"><X size={20} /> Fermer</Button>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

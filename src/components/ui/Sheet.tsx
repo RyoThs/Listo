@@ -1,14 +1,20 @@
 import type { ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { useBackHandler } from '../../lib/backButton';
 import { IconButton } from './Button';
 import { ErrorBoundary } from '../ErrorBoundary';
 
-/** Fenêtre qui monte du bas de l'écran. Se ferme avec le bouton Retour d'Android. */
+/**
+ * Fenêtre qui monte du bas de l'écran. Se ferme avec le bouton Retour d'Android.
+ * Elle est posée directement sur <body> (portail) : ouverte depuis la barre du bas (floutée),
+ * elle restait sinon « coincée » dans cette barre et ne couvrait pas tout l'écran —
+ * on pouvait toucher la liste derrière (flèche Retour, Magasin…).
+ */
 export function Sheet({ open, onClose, title, children }: { open: boolean; onClose: () => void; title: string; children: ReactNode }) {
   useBackHandler(open, onClose);
   if (!open) return null;
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center" role="dialog" aria-modal="true" aria-label={title}>
       <div className="absolute inset-0 bg-ink/35" onClick={onClose} />
       <div className="animate-slide-up pb-safe relative max-h-[88vh] w-full max-w-lg overflow-y-auto rounded-t-3xl bg-card px-4 pt-2 shadow-2xl">
@@ -19,6 +25,7 @@ export function Sheet({ open, onClose, title, children }: { open: boolean; onClo
         </div>
         <ErrorBoundary name={title}>{children}</ErrorBoundary>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
