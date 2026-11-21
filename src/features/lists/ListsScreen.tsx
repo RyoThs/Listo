@@ -10,6 +10,8 @@ import { useUI } from '../../stores/ui';
 import { InstallButton } from '../pwa/InstallButton';
 import { OfflineBadge } from '../pwa/OfflineBadge';
 import { ListEditorSheet } from './ListEditorSheet';
+import { SwipeToDelete } from './SwipeToDelete';
+import { useDeleteList } from './useDeleteList';
 import { FavoritesStrip } from '../favorites/FavoritesStrip';
 import { CardsStrip } from '../cards/CardsStrip';
 import { PasteListSheet } from '../received/PasteListSheet';
@@ -23,6 +25,7 @@ export function ListsScreen() {
   const [backup, setBackup] = useState(false);
   const [pasting, setPasting] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const removeList = useDeleteList();
 
   // useLiveQuery : l'écran se met à jour tout seul dès que la base change.
   const lists = useLiveQuery(getActiveLists, []);
@@ -73,7 +76,9 @@ export function ListsScreen() {
           const done = c.total ? (c.total - c.left) / c.total : 0;
           return (
             // Deux boutons côte à côte (jamais un bouton dans un bouton) : ouvrir la liste, ou ⋯ pour la modifier / supprimer.
-            <div key={l.id} className="relative">
+            // Glisser la ligne à gauche ou à droite la supprime aussi (avec « Annuler »).
+            <SwipeToDelete key={l.id} label={`Liste ${l.title} (glisser pour supprimer)`} onDelete={() => removeList(l.id, l.title)}>
+            <div className="relative">
             <button onClick={() => openList(l.id)}
               className="flex w-full items-center gap-3 rounded-2xl border border-line bg-card p-3.5 pr-14 text-left shadow-[0_1px_0_rgba(0,0,0,0.03)] active:scale-[0.99]">
               <span className="flex size-12 shrink-0 items-center justify-center rounded-xl text-white" style={{ background: l.color }}>
@@ -96,6 +101,7 @@ export function ListsScreen() {
               <MoreHorizontal size={22} />
             </IconButton>
             </div>
+            </SwipeToDelete>
           );
         })}
         <ErrorBoundary name="Mes courses passées"><TripsHistoryButton /></ErrorBoundary>
