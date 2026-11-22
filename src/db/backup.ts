@@ -1,5 +1,6 @@
 import { db } from './db';
 import type { Favorite, KnownProduct, LoyaltyCard, ShoppingItem, ShoppingList, Suggestion, Trip, Unit } from '../types';
+import { cleanNote } from '../lib/note';
 
 // Sauvegarde dans un fichier, et restauration depuis ce fichier.
 // La restauration FUSIONNE : elle n'efface jamais rien. Pour chaque fiche, la version la plus récente gagne.
@@ -68,7 +69,7 @@ function cleanItem(r: any): ShoppingItem | null {
   return {
     id: r.id, listId: r.listId, name: r.name.slice(0, 120), category: isStr(r.category) ? r.category : 'other',
     quantity: isNum(r.quantity) && r.quantity > 0 ? r.quantity : 1, unit: optUnit(r.unit),
-    estimatedPrice: optNum(r.estimatedPrice), isCompleted: r.isCompleted === true,
+    estimatedPrice: optNum(r.estimatedPrice), note: cleanNote(r.note), isCompleted: r.isCompleted === true,
     createdAt: isNum(r.createdAt) ? r.createdAt : Date.now(), updatedAt: isNum(r.updatedAt) ? r.updatedAt : 0,
     order: isNum(r.order) ? r.order : 0,
   };
@@ -78,7 +79,7 @@ function cleanFavorite(r: any): Favorite | null {
   if (!r || !isStr(r.id) || !isStr(r.title) || !Array.isArray(r.items)) return null;
   const items = r.items
     .filter((i: any) => i && isStr(i.name))
-    .map((i: any) => ({ name: i.name.slice(0, 120), category: isStr(i.category) ? i.category : 'other', quantity: isNum(i.quantity) && i.quantity > 0 ? i.quantity : 1, unit: optUnit(i.unit), estimatedPrice: optNum(i.estimatedPrice) }));
+    .map((i: any) => ({ name: i.name.slice(0, 120), category: isStr(i.category) ? i.category : 'other', quantity: isNum(i.quantity) && i.quantity > 0 ? i.quantity : 1, unit: optUnit(i.unit), estimatedPrice: optNum(i.estimatedPrice), note: cleanNote(i.note) }));
   return {
     id: r.id, title: r.title.slice(0, 80), color: isStr(r.color) ? r.color : '#4E7F60', icon: optStr(r.icon), items,
     sourceListId: optStr(r.sourceListId), createdAt: isNum(r.createdAt) ? r.createdAt : Date.now(), updatedAt: isNum(r.updatedAt) ? r.updatedAt : 0,

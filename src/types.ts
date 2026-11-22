@@ -11,6 +11,7 @@ export interface ShoppingItem {
   quantity: number;
   unit?: Unit;
   estimatedPrice?: number; // prix de la ligne, en euros
+  note?: string; // précision courte : « bio », « marque X »…
   isCompleted: boolean;
   createdAt: number;
   // Ajouts : ordre personnel, date de modification, effacement doux (pour le futur partage)
@@ -37,6 +38,7 @@ export interface FavoriteItem {
   quantity: number;
   unit?: Unit;
   estimatedPrice?: number;
+  note?: string;
 }
 
 /** Liste favorite : un modèle réutilisable (ex. « Courses de la semaine »). */

@@ -68,11 +68,11 @@ export function AddItemBar({ listId, existingNames, shortcuts }: Props) {
   };
 
   const pick = (s: Suggestion) => {
-    const { quantity, unit } = parseEntry(text);
+    const { quantity, unit, note } = parseEntry(text);
     setText('');
     inputRef.current?.focus();
     haptic(8);
-    void addItem(listId, { name: s.name, category: s.category, unit: unit ?? s.unit, quantity }).then((item) => item && setToast(addedMessage(item)));
+    void addItem(listId, { name: s.name, category: s.category, unit: unit ?? s.unit, quantity, note }).then((item) => item && setToast(addedMessage(item)));
   };
 
   const value = speech.listening ? speech.interim || 'Je t’écoute…' : text;

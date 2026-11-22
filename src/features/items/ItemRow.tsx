@@ -21,6 +21,8 @@ export function ItemRow({ item, storeMode, dimmed, onEdit, dragHandle, style, se
   const cat = getCategory(item.category);
   const qty = formatQuantity(item.quantity, item.unit);
   const step = stepFor(item.unit);
+  // Une note abîmée (pas du texte) ne doit jamais faire tomber la liste : on l'ignore.
+  const note = typeof item.note === 'string' && item.note ? item.note : undefined;
 
   const toggle = () => { haptic(); void toggleItem(item.id); };
   const changeQty = (delta: number) => {
@@ -44,9 +46,10 @@ export function ItemRow({ item, storeMode, dimmed, onEdit, dragHandle, style, se
           {item.name}
           {qty && <span className="ml-2 font-mono text-sm font-normal text-muted">{qty}</span>}
         </span>
-        <span className="flex items-center gap-1.5 text-xs text-muted">
-          <span className="size-2 rounded-full" style={{ background: cat.color }} />
-          {cat.label}
+        <span className={`flex min-w-0 items-center gap-1.5 text-muted ${storeMode ? 'text-sm' : 'text-xs'}`}>
+          <span className="size-2 shrink-0 rounded-full" style={{ background: cat.color }} />
+          <span className="shrink-0">{cat.label}</span>
+          {note && <><span aria-hidden className="shrink-0">·</span><span className="truncate font-medium text-sage-dark">{note}</span></>}
         </span>
       </button>
 

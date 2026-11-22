@@ -1,6 +1,7 @@
 import { CATEGORIES } from './categories';
 import { LIST_COLORS, LIST_ICONS } from './listIcons';
 import { sortItems } from './sort';
+import { cleanNote } from './note';
 import type { ShoppingItem, ShoppingList, Unit } from '../types';
 
 // Le lien « Ouvrir dans LISTO » ajouté en bas d'une liste envoyée par message.
@@ -21,6 +22,7 @@ export interface SharedItem {
   quantity: number;
   unit?: Unit;
   category?: string;
+  note?: string;
 }
 
 export const LINK_KEY = 'liste';
@@ -51,8 +53,9 @@ function fromBase64Url(code: string): string {
 /** Le lien qui recrée la liste chez la personne qui le reçoit. Seuls les articles « à prendre » y sont, dans l'ordre des rayons. */
 export function buildListLink(list: Pick<ShoppingList, 'title' | 'color' | 'icon'>, items: ShoppingItem[], appUrl: string): string {
   const pending = sortItems(items.filter((i) => !i.deletedAt), 'category').pending.slice(0, MAX_SHARED_ITEMS);
-  // Format court pour garder un lien raisonnable : [nom, quantité?, unité?, rayon?]
-  const rows = pending.map((i) => [i.name, i.quantity, i.unit ?? '', i.category]);
+  // Format court pour garder un lien raisonnable : [nom, quantité, unité, rayon, note?]
+  // (la note est en dernier : une ancienne version de LISTO l'ignore simplement)
+  const rows = pending.map((i) => (i.note ? [i.name, i.quantity, i.unit ?? '', i.category, i.note] : [i.name, i.quantity, i.unit ?? '', i.category]));
   const payload = { v: VERSION, t: list.title, c: list.color, i: list.icon, a: rows };
   return `${appUrl.replace(/#.*$/, '')}#${LINK_KEY}=${toBase64Url(JSON.stringify(payload))}`;
 }
@@ -89,7 +92,7 @@ export function readListLink(text: string): SharedList | null {
 
 function cleanRow(row: unknown): SharedItem | null {
   if (!Array.isArray(row)) return null;
-  const [name, quantity, unit, category] = row;
+  const [name, quantity, unit, category, note] = row;
   if (typeof name !== 'string') return null;
   const cleanName = name.replace(/\s+/g, ' ').trim().slice(0, 120);
   if (!cleanName) return null;
@@ -98,6 +101,7 @@ function cleanRow(row: unknown): SharedItem | null {
     quantity: typeof quantity === 'number' && Number.isFinite(quantity) && quantity > 0 ? Math.min(quantity, 9999) : 1,
     unit: UNITS.includes(unit) ? unit : undefined,
     category: CATEGORY_IDS.has(category) ? category : undefined, // inconnu → LISTO devinera le rayon
+    note: cleanNote(note),
   };
 }
 

@@ -6,6 +6,7 @@ import { Button } from '../../components/ui/Button';
 import { Segmented } from '../../components/ui/Segmented';
 import { CATEGORIES } from '../../lib/categories';
 import { parsePrice } from '../../lib/format';
+import { MAX_NOTE } from '../../lib/note';
 import { deleteItem, restoreItems, updateItem } from '../../db/actions';
 import { useUI } from '../../stores/ui';
 import type { ShoppingItem, Unit } from '../../types';
@@ -18,6 +19,7 @@ export function ItemEditorSheet({ item, onClose }: { item: ShoppingItem | null; 
   const [quantity, setQuantity] = useState('1');
   const [unit, setUnit] = useState<Unit>('unité');
   const [price, setPrice] = useState('');
+  const [note, setNote] = useState('');
   const offerUndo = useUI((s) => s.offerUndo);
 
   useEffect(() => {
@@ -27,6 +29,7 @@ export function ItemEditorSheet({ item, onClose }: { item: ShoppingItem | null; 
     setQuantity(String(item.quantity).replace('.', ','));
     setUnit(item.unit ?? 'unité');
     setPrice(item.estimatedPrice !== undefined ? String(item.estimatedPrice).replace('.', ',') : '');
+    setNote(typeof item.note === 'string' ? item.note : '');
   }, [item]);
 
   const save = async () => {
@@ -40,6 +43,7 @@ export function ItemEditorSheet({ item, onClose }: { item: ShoppingItem | null; 
       category,
       quantity: Number.isFinite(q) && q > 0 ? q : item.quantity,
       unit,
+      note, // vide = note effacée (nettoyée dans updateItem)
       ...(priceChanged ? { estimatedPrice: newPrice } : {}),
     });
     onClose();
@@ -49,6 +53,8 @@ export function ItemEditorSheet({ item, onClose }: { item: ShoppingItem | null; 
     <Sheet open={!!item} onClose={onClose} title="Modifier l'article">
       <form className="space-y-4 pb-2" onSubmit={(e) => { e.preventDefault(); void save(); }}>
         <Field label="Nom" value={name} onChange={(e) => setName(e.target.value)} enterKeyHint="done" />
+        <Field label="Note (facultatif)" value={note} onChange={(e) => setNote(e.target.value)} maxLength={MAX_NOTE}
+          placeholder="Ex. bio, marque X, le gros pot…" enterKeyHint="done" autoCapitalize="off" />
 
         <div className="grid grid-cols-[1fr_auto] gap-3">
           <Field label="Quantité" value={quantity} onChange={(e) => setQuantity(e.target.value)} inputMode="decimal" />

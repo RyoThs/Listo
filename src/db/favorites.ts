@@ -25,7 +25,7 @@ export async function saveListAsFavorite(listId: string): Promise<{ favorite: Fa
   const list = await db.lists.get(listId);
   if (!list) return undefined;
   const items = (await getActiveItems(listId)).sort((a, b) => a.order - b.order);
-  const favItems: FavoriteItem[] = items.map(({ name, category, quantity, unit, estimatedPrice }) => ({ name, category, quantity, unit, estimatedPrice }));
+  const favItems: FavoriteItem[] = items.map(({ name, category, quantity, unit, estimatedPrice, note }) => ({ name, category, quantity, unit, estimatedPrice, note }));
   const existing = await getFavoriteForList(listId);
   const t = now();
   const favorite: Favorite = existing
@@ -44,7 +44,7 @@ export async function addFavoriteToList(favoriteId: string, listId: string): Pro
   if (!fav || fav.deletedAt) return 0;
   let count = 0;
   for (const fi of fav.items) {
-    const item = await addItem(listId, { name: fi.name, category: fi.category, quantity: fi.quantity, unit: fi.unit });
+    const item = await addItem(listId, { name: fi.name, category: fi.category, quantity: fi.quantity, unit: fi.unit, note: fi.note });
     if (!item) continue;
     count++;
     // on reprend le prix mémorisé seulement si l'article n'en a pas déjà un

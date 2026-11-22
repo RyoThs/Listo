@@ -1,10 +1,12 @@
 import type { Unit } from '../types';
 import { capitalize } from './text';
+import { cleanNote } from './note';
 
 export interface ParsedEntry {
   name: string;
   quantity: number;
   unit?: Unit;
+  note?: string;
 }
 
 const NUMBER_WORDS: Record<string, number> = {
@@ -34,8 +36,12 @@ const ARTICLES = /^(de la |de l'|de l’|du |des |de |d'|d’|le |la |les |l'|l�
  * « 2 kg de pommes » → { quantity: 2, unit: 'kg', name: 'Pommes' }
  * « du pain »        → { quantity: 1, name: 'Pain' }
  * « 500g de farine » → { quantity: 500, unit: 'g', name: 'Farine' }
+ * « lait (bio) »     → { quantity: 1, name: 'Lait', note: 'bio' }   (le texte entre parenthèses = la note)
  */
 export function parseEntry(text: string): ParsedEntry {
+  const paren = text.match(/\(([^()]*)\)\s*$/);
+  const note = paren ? cleanNote(paren[1]) : undefined;
+  if (paren) text = text.slice(0, paren.index);
   let words = text.trim().split(/\s+/).filter(Boolean);
   let quantity = 1;
   let unit: Unit | undefined;
@@ -60,13 +66,22 @@ export function parseEntry(text: string): ParsedEntry {
   }
 
   const name = capitalize(words.join(' ').replace(ARTICLES, ''));
-  return { name, quantity: quantity > 0 ? quantity : 1, unit };
+  return { name, quantity: quantity > 0 ? quantity : 1, unit, note };
 }
 
 /** « lait, 2 kg de pommes et du pain » → 3 articles. */
 export function splitEntries(text: string): string[] {
-  return text
-    .split(/,|;|\n|\s+et\s+|\s+puis\s+/i)
+  // On ne coupe pas à l'intérieur d'une note entre parenthèses : « lait (bio, entier) » reste un seul article.
+  const parts: string[] = [];
+  let depth = 0, start = 0;
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === '(') depth++;
+    else if (text[i] === ')') depth = Math.max(0, depth - 1);
+    else if (depth === 0 && /[,;\n]/.test(text[i])) { parts.push(text.slice(start, i)); start = i + 1; }
+  }
+  parts.push(text.slice(start));
+  return parts
+    .flatMap((p) => (/[()]/.test(p) ? [p] : p.split(/\s+et\s+|\s+puis\s+/i)))
     .map((s) => s.trim())
     .filter(Boolean);
 }

@@ -4,6 +4,7 @@ import { guessCategory, learnCorrection, remember } from './suggestions';
 import { knownPrice, rememberPrice, scalePrice } from './prices';
 import { newId } from '../lib/id';
 import { normalize, capitalize } from '../lib/text';
+import { cleanNote } from '../lib/note';
 import type { ShoppingItem, Unit } from '../types';
 
 // Les articles d'une liste.
@@ -18,6 +19,7 @@ export interface ItemDraft {
   quantity?: number;
   unit?: Unit;
   category?: string;
+  note?: string;
 }
 
 /** L'article ajouté ; `merged` = il était déjà dans la liste, seule sa quantité a augmenté. */
@@ -43,16 +45,18 @@ export async function addItem(listId: string, draft: ItemDraft): Promise<AddedIt
     if (same) {
       const quantity = same.quantity + (draft.quantity ?? 1);
       const estimatedPrice = same.estimatedPrice === undefined ? undefined : scalePrice(same.estimatedPrice, same.quantity, quantity);
-      await db.items.update(same.id, { quantity, estimatedPrice, updatedAt: t });
+      const note = same.note ?? cleanNote(draft.note); // la note déjà notée reste ; sinon on prend la nouvelle
+      await db.items.update(same.id, { quantity, estimatedPrice, note, updatedAt: t });
       await enqueue('items', same.id, 'put');
       await remember(name, same.category, same.unit);
-      return { ...same, quantity, estimatedPrice, updatedAt: t, merged: true };
+      return { ...same, quantity, estimatedPrice, note, updatedAt: t, merged: true };
     }
 
     const item: ShoppingItem = {
       id: newId(), listId, name, category,
       quantity: draft.quantity ?? 1, unit: draft.unit,
       estimatedPrice: await knownPrice(name, draft.quantity ?? 1, draft.unit),
+      note: cleanNote(draft.note),
       isCompleted: false, createdAt: t, updatedAt: t,
       order: items.reduce((m, i) => Math.max(m, i.order), -1) + 1,
     };
@@ -73,6 +77,7 @@ export async function updateItem(id: string, changes: Partial<Omit<ShoppingItem,
     const before = await db.items.get(id);
     if (!before) return;
     const next = { ...changes };
+    if ('note' in next) next.note = cleanNote(next.note);
     if (next.quantity !== undefined && !('estimatedPrice' in next) && before.estimatedPrice !== undefined) {
       next.estimatedPrice = scalePrice(before.estimatedPrice, before.quantity, next.quantity);
     }

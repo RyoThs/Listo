@@ -14,7 +14,7 @@ export async function createListFromShared(shared: SharedList): Promise<Shopping
   return db.transaction('rw', [db.lists, db.items, db.suggestions, db.syncQueue], async () => {
     const list = await createList({ title: shared.title, color: shared.color, icon: shared.icon });
     for (const item of shared.items) {
-      await addItem(list.id, { name: item.name, quantity: item.quantity, unit: item.unit, category: item.category });
+      await addItem(list.id, { name: item.name, quantity: item.quantity, unit: item.unit, category: item.category, note: item.note });
     }
     return list;
   });

@@ -5,6 +5,7 @@ import { guessCategory } from './suggestions';
 import { newId } from '../lib/id';
 import { parseEntry, splitEntries } from '../lib/parse';
 import { LIST_COLORS } from '../lib/listIcons';
+import { cleanNote } from '../lib/note';
 import type { Favorite, FavoriteItem } from '../types';
 
 // Packs et recettes : un pack est un favori (modèle d'articles) qu'on verse dans une liste.
@@ -30,6 +31,7 @@ async function savePack(title: string, drafts: ItemDraft[]): Promise<Favorite> {
       category: d.category ?? (await guessCategory(itemName)),
       quantity: d.quantity && d.quantity > 0 ? d.quantity : 1,
       unit: d.unit,
+      note: cleanNote(d.note),
     });
   }
   if (!items.length) throw new Error('Ajoute au moins un ingrédient.');

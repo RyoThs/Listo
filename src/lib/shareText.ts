@@ -12,6 +12,7 @@ import { formatQuantity } from './format';
  *   Fruits et légumes
  *   • Pommes (2 kg)
  *   • Bananes (×3)
+ *   • Lait (2 L) – bio
  *
  *   📲 Ouvrir dans LISTO :
  *   https://ryoths.github.io/Listo/#liste=…
@@ -25,7 +26,7 @@ export function buildListText(title: string, items: ShoppingItem[], link?: strin
     lines.push('', getCategory(group.category).label);
     for (const item of group.items) {
       const qty = formatQuantity(item.quantity, item.unit);
-      lines.push(`• ${item.name}${qty ? ` (${qty})` : ''}`);
+      lines.push(`• ${item.name}${qty ? ` (${qty})` : ''}${item.note ? ` – ${item.note}` : ''}`);
     }
   }
   if (link) lines.push('', '📲 Ouvrir dans LISTO :', link);

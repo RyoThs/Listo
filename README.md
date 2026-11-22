@@ -6,6 +6,7 @@ Listes de courses intelligentes, installables sur **Android** et **iPhone**, qui
 - Plusieurs listes (couleur + icône), créer / renommer / supprimer : **glisser une liste à gauche ou à droite** sur l’accueil, bouton ⋯, ou « Options de la liste » (toujours avec « Annuler »).
 - Rayons devinés automatiquement (« steak haché » → Viande et poisson), et l'appli retient tes corrections. 11 rayons, dont Animalerie.
 - Saisie rapide : « 2 kg de pommes, du pain et lait » ajoute 3 articles d'un coup. Suggestions selon tes habitudes.
+- **Note sur un article** : « lait (bio, demi-écrémé) » ajoute Lait avec la note « bio, demi-écrémé ». Elle se modifie dans la fenêtre de l’article (champ Note), se voit dans la liste et en mode Magasin, et suit l’article dans la sauvegarde, les favoris, les packs et la liste envoyée par message.
 - Saisie à la voix (micro), boutons + / −, unités (unité, kg, g, L).
 - Tri : par rayon, A → Z, ou ton ordre (glisser-déposer avec la poignée ⋮⋮).
 - Envoyer la liste par SMS, WhatsApp ou e-mail (bouton ✈️ en haut de la liste) : les articles à prendre, rangés par rayon.
