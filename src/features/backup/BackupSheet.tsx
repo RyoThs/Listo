@@ -4,6 +4,8 @@ import { Sheet } from '../../components/ui/Sheet';
 import { Button } from '../../components/ui/Button';
 import { buildBackup, backupFileName, parseBackup, importBackup, BackupError } from '../../db/backup';
 import { useUI } from '../../stores/ui';
+import { AccountSection } from './AccountSection';
+import { ErrorBoundary } from '../../components/ErrorBoundary';
 
 export const BACKUP_REMINDER_DAYS = 14;
 const DAY = 24 * 60 * 60 * 1000;
@@ -68,12 +70,13 @@ export function BackupSheet({ open, onClose }: { open: boolean; onClose: () => v
   return (
     <Sheet open={open} onClose={() => { setMessage(null); onClose(); }} title="Sauvegarde">
       <div className="space-y-4 pb-2">
+        <ErrorBoundary name="Compte"><AccountSection /></ErrorBoundary>
         <p className={`flex items-center gap-2 rounded-2xl p-3 text-[15px] ${late ? 'bg-[#FBF0DC] text-[#7A5512]' : 'bg-sage-soft text-sage-dark'}`}>
           {late ? <TriangleAlert size={20} className="shrink-0" /> : <ShieldCheck size={20} className="shrink-0" />}
           <span>{lastBackupLabel(lastBackupAt)}</span>
         </p>
         <p className="text-[15px] text-muted">
-          Tes listes et tes cartes de fidélité sont rangées dans ce téléphone uniquement. Une sauvegarde régulière te protège si tu changes de téléphone ou supprimes l'appli.
+          Sans compte, tes listes et tes cartes de fidélité sont rangées dans ce téléphone uniquement. Un fichier de sauvegarde te protège aussi si tu changes de téléphone ou supprimes l'appli.
         </p>
 
         <Button className="w-full" disabled={busy} onClick={() => void exportNow()}>
