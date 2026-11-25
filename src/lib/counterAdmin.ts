@@ -1,4 +1,7 @@
 import { cleanTotal, weekOf, type CounterConfig, type CounterTotal } from './counter';
+import { forgetSession, readSession, storeSession, type AdminSession, type Store } from './auth';
+
+export { signIn, refreshSession, isExpired, type AdminSession } from './auth';
 
 // Écran « Compteur » réservé à Yoann (comme Fluxe Suivi) : connexion Firebase par e-mail et lecture des totaux.
 // Sans la bibliothèque Firebase (appels directs), pour que LISTO reste léger.
@@ -7,10 +10,8 @@ import { cleanTotal, weekOf, type CounterConfig, type CounterTotal } from './cou
 /** Connexion gardée sur le téléphone de Yoann seulement. Jamais dans la sauvegarde. */
 export const SESSION_KEY = 'listo-compteur-admin-v1';
 
-export interface AdminSession { uid: string; email: string; idToken: string; refreshToken: string; expiresAt: number }
 export type WeekTotal = CounterTotal & { week: string };
 type Fetch = typeof fetch;
-type Store = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 
 /** Les n dernières semaines (lundis « AAAA-MM-JJ »), de la plus ancienne à celle-ci. */
 export function lastWeeks(n: number, now = Date.now()): string[] {
@@ -26,46 +27,6 @@ export function fromFirestore(doc: unknown): CounterTotal {
   return cleanTotal(Object.fromEntries(Object.entries(fields).map(([k, v]) => [k, v?.integerValue])));
 }
 
-const MESSAGES: Record<string, string> = {
-  INVALID_LOGIN_CREDENTIALS: 'E-mail ou mot de passe incorrect',
-  INVALID_PASSWORD: 'E-mail ou mot de passe incorrect',
-  EMAIL_NOT_FOUND: 'E-mail ou mot de passe incorrect',
-  INVALID_EMAIL: 'E-mail ou mot de passe incorrect',
-  USER_DISABLED: 'Ce compte est désactivé',
-};
-async function errorOf(res: Response, fallback: string) {
-  try {
-    const code = String((await res.json())?.error?.message ?? '').split(' ')[0];
-    if (code.startsWith('TOO_MANY_ATTEMPTS')) return new Error('Trop d’essais : réessaie dans quelques minutes');
-    return new Error(MESSAGES[code] ?? fallback);
-  } catch {
-    return new Error(fallback);
-  }
-}
-
-const opts = (body: unknown): RequestInit => ({
-  method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: AbortSignal.timeout(10000),
-});
-
-export async function signIn(cfg: CounterConfig, email: string, password: string, f: Fetch, now = Date.now()): Promise<AdminSession> {
-  const res = await f(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${encodeURIComponent(cfg.apiKey)}`,
-    opts({ email, password, returnSecureToken: true }));
-  if (!res.ok) throw await errorOf(res, 'Connexion impossible (réseau ?)');
-  const d = await res.json();
-  return { uid: String(d.localId), email, idToken: String(d.idToken), refreshToken: String(d.refreshToken), expiresAt: now + Number(d.expiresIn || 3600) * 1000 };
-}
-
-/** Le jeton dure 1 h : on le renouvelle s'il lui reste moins d'une minute. */
-export const isExpired = (s: AdminSession, now = Date.now()) => s.expiresAt - now < 60_000;
-
-export async function refreshSession(cfg: CounterConfig, s: AdminSession, f: Fetch, now = Date.now()): Promise<AdminSession> {
-  const res = await f(`https://securetoken.googleapis.com/v1/token?key=${encodeURIComponent(cfg.apiKey)}`,
-    opts({ grant_type: 'refresh_token', refresh_token: s.refreshToken }));
-  if (!res.ok) throw await errorOf(res, 'Session expirée : reconnecte-toi');
-  const d = await res.json();
-  return { ...s, idToken: String(d.id_token), refreshToken: String(d.refresh_token), expiresAt: now + Number(d.expires_in || 3600) * 1000 };
-}
-
 export async function readWeeks(cfg: CounterConfig, idToken: string, weeks: string[], f: Fetch): Promise<WeekTotal[]> {
   const base = `https://firestore.googleapis.com/v1/projects/${cfg.projectId}/databases/(default)/documents/compteur/`;
   const out: WeekTotal[] = [];
@@ -79,22 +40,9 @@ export async function readWeeks(cfg: CounterConfig, idToken: string, weeks: stri
   return out;
 }
 
-export function loadSession(st: Store): AdminSession | null {
-  try {
-    const s = JSON.parse(st.getItem(SESSION_KEY) ?? 'null');
-    const ok = s && typeof s.uid === 'string' && typeof s.email === 'string' && typeof s.idToken === 'string'
-      && typeof s.refreshToken === 'string' && typeof s.expiresAt === 'number';
-    return ok ? s : null;
-  } catch {
-    return null;
-  }
-}
-export function saveSession(st: Store, s: AdminSession) {
-  try { st.setItem(SESSION_KEY, JSON.stringify(s)); } catch { /* stockage refusé : il faudra se reconnecter */ }
-}
-export function clearSession(st: Store) {
-  try { st.removeItem(SESSION_KEY); } catch { /* rien */ }
-}
+export const loadSession = (st: Store) => readSession(st, SESSION_KEY);
+export const saveSession = (st: Store, s: AdminSession) => storeSession(st, SESSION_KEY, s);
+export const clearSession = (st: Store) => forgetSession(st, SESSION_KEY);
 
 /** Entrée cachée : vrai au n-ième toucher rapide (tous dans la fenêtre de temps), puis on recommence. */
 export function tapCounter(n = 5, windowMs = 3000) {

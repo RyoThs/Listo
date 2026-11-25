@@ -1,4 +1,4 @@
-// LISTO — Règles de sécurité de la base Firestore du compteur anonyme
+// LISTO — Règles de sécurité de la base Firestore (compteur anonyme + sauvegarde automatique des comptes)
 // (à coller dans la console Firebase du projet LISTO : Firestore Database > Règles > Publier).
 // compteur/{lundi de la semaine, AAAA-MM-JJ} = { ios, android, autre, nouveaux, installes }
 // Tout le monde (sans compte) peut seulement AJOUTER 1 : à exactement UN type de téléphone, et au plus 1 à
@@ -29,6 +29,15 @@ service cloud.firestore {
     match /admins/{uid} {
       allow get: if request.auth != null && request.auth.uid == uid;
       allow list, write: if false;
+    }
+    // Sauvegarde automatique (v0.16.0) : users/{uid}/sauvegarde/derniere = { j: texte, t: date, v: 1 }.
+    // Chaque compte ne peut lire, écrire et effacer QUE sa propre sauvegarde. Taille limitée.
+    match /users/{uid}/sauvegarde/{doc} {
+      allow read, delete: if request.auth != null && request.auth.uid == uid && doc == 'derniere';
+      allow create, update: if request.auth != null && request.auth.uid == uid && doc == 'derniere'
+        && request.resource.data.keys().hasOnly(['j', 't', 'v'])
+        && request.resource.data.j is string && request.resource.data.j.size() <= 1000000
+        && request.resource.data.t is int && request.resource.data.v == 1;
     }
     // tout le reste est interdit
     match /{autre=**} {
