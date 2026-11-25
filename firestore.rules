@@ -1,0 +1,31 @@
+// LISTO — Règles de sécurité de la base Firestore du compteur anonyme
+// (à coller dans la console Firebase du projet LISTO : Firestore Database > Règles > Publier).
+// compteur/{lundi de la semaine, AAAA-MM-JJ} = { ios, android, autre, nouveaux, installes }
+// Tout le monde (sans compte) peut seulement AJOUTER 1 : à exactement UN type de téléphone, et au plus 1 à
+// « nouveaux » et à « installes ». Aucun autre champ, aucune lecture depuis l'appli, aucune suppression.
+// Yoann lit les totaux dans la console Firebase (les règles ne s'appliquent pas à la console).
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function ecart(n, a, k) {
+      return n.get(k, 0) - a.get(k, 0);
+    }
+    function plusUn(n, a) {
+      return n.keys().hasOnly(['ios', 'android', 'autre', 'nouveaux', 'installes'])
+        && n.get('ios', 0) is int && n.get('android', 0) is int && n.get('autre', 0) is int
+        && n.get('nouveaux', 0) is int && n.get('installes', 0) is int
+        && ecart(n, a, 'ios') in [0, 1] && ecart(n, a, 'android') in [0, 1] && ecart(n, a, 'autre') in [0, 1]
+        && ecart(n, a, 'ios') + ecart(n, a, 'android') + ecart(n, a, 'autre') == 1
+        && ecart(n, a, 'nouveaux') in [0, 1] && ecart(n, a, 'installes') in [0, 1];
+    }
+    match /compteur/{semaine} {
+      allow create: if semaine.matches('^20[0-9]{2}-[01][0-9]-[0-3][0-9]$') && plusUn(request.resource.data, {});
+      allow update: if semaine.matches('^20[0-9]{2}-[01][0-9]-[0-3][0-9]$') && plusUn(request.resource.data, resource.data);
+      allow read, delete: if false;
+    }
+    // tout le reste est interdit
+    match /{autre=**} {
+      allow read, write: if false;
+    }
+  }
+}
