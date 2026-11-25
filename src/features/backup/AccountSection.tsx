@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { CloudUpload, CloudOff, UserRound } from 'lucide-react';
 import { Field } from '../../components/ui/Field';
 import { Button } from '../../components/ui/Button';
-import { ACCOUNT_EVENT, connect, currentAccount, deleteMyAccount, disconnect, lastCloudSave, lastSaveResult, resetPassword, saveNow } from '../../lib/account';
+import { ACCOUNT_EVENT, checkVerified, connect, currentAccount, deleteMyAccount, disconnect, lastCloudSave, lastSaveResult, resendVerification, resetPassword, saveNow } from '../../lib/account';
 import { saveMessage } from '../../lib/cloudSync';
 import { useUI } from '../../stores/ui';
 
@@ -84,6 +84,34 @@ function DeleteAccount() {
   );
 }
 
+/** Comme Fluxe : encadré tant que l'adresse n'est pas vérifiée (la sauvegarde marche déjà). */
+function VerifyEmailNotice({ email }: { email: string }) {
+  const showToast = useUI((s) => s.showToast);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState('');
+  const act = async (fn: () => Promise<unknown>, done: string) => {
+    setBusy(true); setMsg('');
+    try { await fn(); if (done) setMsg(done); }
+    catch (e) { setMsg(e instanceof Error ? e.message : 'Ça n’a pas marché'); }
+    finally { setBusy(false); }
+  };
+  const check = () => act(async () => {
+    if (await checkVerified()) showToast('Adresse vérifiée ✓');
+    else throw new Error('Pas encore vérifiée : touche le lien dans l’e-mail, puis réessaie.');
+  }, '');
+  return (
+    <div className="space-y-2 rounded-xl bg-[#FBF0DC] p-3 text-[#7A5512]">
+      <p className="font-semibold">Adresse pas encore vérifiée</p>
+      <p className="text-sm">Ouvre l’e-mail « Vérifie ton adresse » envoyé à {email} (regarde aussi dans les spams). La sauvegarde marche déjà ; la vérification sert pour « Mot de passe oublié ».</p>
+      <div className="grid grid-cols-2 gap-2">
+        <Button variant="outline" disabled={busy} onClick={() => void act(resendVerification, 'E-mail renvoyé.')}>Renvoyer l’e-mail</Button>
+        <Button variant="outline" disabled={busy} onClick={() => void check()}>C’est fait</Button>
+      </div>
+      {msg && <p role="status" className="text-sm font-medium">{msg}</p>}
+    </div>
+  );
+}
+
 function SaveNowButton() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -116,6 +144,7 @@ export function AccountSection() {
           {failed && r ? saveMessage(r).text : `Dernière sauvegarde en ligne : ${ago(lastCloudSave())}.`}
           {' '}Compte : {account.email}
         </p>
+        {account.verified === false && <VerifyEmailNotice email={account.email} />}
         <SaveNowButton />
         <Button variant="outline" className="w-full" onClick={disconnect}>Se déconnecter</Button>
         <DeleteAccount />
