@@ -3,7 +3,8 @@
 // compteur/{lundi de la semaine, AAAA-MM-JJ} = { ios, android, autre, nouveaux, installes }
 // Tout le monde (sans compte) peut seulement AJOUTER 1 : à exactement UN type de téléphone, et au plus 1 à
 // « nouveaux » et à « installes ». Aucun autre champ, aucune lecture depuis l'appli, aucune suppression.
-// Yoann lit les totaux dans la console Firebase (les règles ne s'appliquent pas à la console).
+// Lecture : seulement le compte du créateur (fiche admins/{son uid}, créée à la main dans la console), pour l'écran
+// « Compteur » caché de l'appli (v0.15.0). La console Firebase, elle, voit tout.
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -21,7 +22,13 @@ service cloud.firestore {
     match /compteur/{semaine} {
       allow create: if semaine.matches('^20[0-9]{2}-[01][0-9]-[0-3][0-9]$') && plusUn(request.resource.data, {});
       allow update: if semaine.matches('^20[0-9]{2}-[01][0-9]-[0-3][0-9]$') && plusUn(request.resource.data, resource.data);
-      allow read, delete: if false;
+      allow read: if request.auth != null && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+      allow delete: if false;
+    }
+    // Fiche « créateur » : chacun peut seulement savoir si SA propre fiche existe. Création à la main dans la console.
+    match /admins/{uid} {
+      allow get: if request.auth != null && request.auth.uid == uid;
+      allow list, write: if false;
     }
     // tout le reste est interdit
     match /{autre=**} {
