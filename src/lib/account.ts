@@ -24,14 +24,16 @@ let saving = false;
 let lastResult: SaveResult | null = null;
 export const lastSaveResult = () => lastResult;
 
-/** Envoie la sauvegarde si elle a changé. Ne lance jamais d'erreur. */
-export async function saveNow(): Promise<SaveResult | null> {
+/** Envoie la sauvegarde si elle a changé (ou toujours, avec force). Ne lance jamais d'erreur. */
+export async function saveNow(force = false): Promise<SaveResult | null> {
   const c = cfg(); const s = currentAccount();
-  if (!c || !s || saving || !navigator.onLine) return null;
+  if (!c || !s) return null;
+  if (!navigator.onLine) { lastResult = 'offline'; tell(); return lastResult; }
+  if (saving) return null;
   saving = true;
   try {
     const fresh = await freshSession(c, s, localStorage, ACCOUNT_KEY, doFetch);
-    lastResult = await saveIfChanged(c, fresh, localStorage, doFetch);
+    lastResult = await saveIfChanged(c, fresh, localStorage, doFetch, Date.now(), { force });
     if (lastResult === 'sent' || lastResult === 'unchanged') {
       try { localStorage.setItem(LAST_SAVE_KEY, String(Date.now())); } catch { /* rien */ }
       useUI.getState().markBackup(); // le rappel « sauvegarde » (point orange) n'a plus lieu d'être
