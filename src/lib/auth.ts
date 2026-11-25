@@ -4,7 +4,7 @@ import type { CounterConfig } from './counter';
 // Sert au compte facultatif (sauvegarde automatique) et à l'écran « Compteur » de Yoann.
 
 export type AuthConfig = CounterConfig;
-export interface AdminSession { uid: string; email: string; idToken: string; refreshToken: string; expiresAt: number }
+export interface AdminSession { uid: string; email: string; idToken: string; refreshToken: string; expiresAt: number; verified?: boolean }
 export type Session = AdminSession;
 type Fetch = typeof fetch;
 export type Store = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
@@ -80,7 +80,9 @@ export function readSession(st: Store, key: string): Session | null {
     const s = JSON.parse(st.getItem(key) ?? 'null');
     const ok = s && typeof s.uid === 'string' && typeof s.email === 'string' && typeof s.idToken === 'string'
       && typeof s.refreshToken === 'string' && typeof s.expiresAt === 'number';
-    return ok ? s : null;
+    if (!ok) return null;
+    if (typeof s.verified !== 'boolean') delete s.verified; // ancienne session ou donnée abîmée : « on ne sait pas »
+    return s;
   } catch {
     return null;
   }
@@ -96,4 +98,17 @@ export function forgetSession(st: Store, key: string) {
 export async function deleteAccount(cfg: AuthConfig, s: Session, f: Fetch): Promise<void> {
   const res = await f(idUrl(cfg, 'delete'), post({ idToken: s.idToken }));
   if (!res.ok) throw await errorOf(res, 'Suppression du compte impossible (réseau ?)');
+}
+
+/** E-mail « Vérifie ton adresse » (comme Fluxe Suivi). */
+export async function sendVerificationEmail(cfg: AuthConfig, s: Session, f: Fetch): Promise<void> {
+  const res = await f(idUrl(cfg, 'sendOobCode'), post({ requestType: 'VERIFY_EMAIL', idToken: s.idToken }));
+  if (!res.ok) throw await errorOf(res, 'Envoi impossible (réseau ?)');
+}
+
+/** Demande à Google si l'adresse de ce compte a été vérifiée (bouton « C'est fait »). */
+export async function isEmailVerified(cfg: AuthConfig, s: Session, f: Fetch): Promise<boolean> {
+  const res = await f(idUrl(cfg, 'lookup'), post({ idToken: s.idToken }));
+  if (!res.ok) throw await errorOf(res, 'Vérification impossible (réseau ?)');
+  return (await res.json())?.users?.[0]?.emailVerified === true;
 }
