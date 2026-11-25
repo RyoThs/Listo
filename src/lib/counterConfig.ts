@@ -4,7 +4,10 @@ import type { CounterConfig } from './counter';
 // Ces deux valeurs ne sont PAS secrètes (elles sont visibles dans toute appli web Firebase) : la sécurité vient des
 // règles `firestore.rules`, qui n'autorisent que des « +1 ». Tant que c'est `null`, le compteur ne fait rien.
 // Mode d'emploi : coffre MonCerveau, « Activer et lire le compteur LISTO ».
-export const COUNTER_FIREBASE: CounterConfig | null = null;
+export const COUNTER_FIREBASE: CounterConfig | null = {
+  projectId: 'listo-54cd9',
+  apiKey: 'AIzaSyDBq-X3HMfXcns9UqQvWOVkrTBAdEZDqGY',
+};
 
 /** Pour les essais Playwright seulement : un faux projet donné au moment de construire l'appli. */
 const testProject = import.meta.env.VITE_COUNTER_TEST_PROJECT as string | undefined;

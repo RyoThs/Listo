@@ -25,7 +25,7 @@ Listes de courses intelligentes, installables sur **Android** et **iPhone**, qui
 - **Annuler** : après une suppression (article, articles pris, liste, favori), un bandeau « Annuler » reste 6 secondes.
 - **Sauvegarde** (⚙️ sur l'accueil) : exporter dans un fichier (`listo-sauvegarde-AAAA-MM-JJ.json`) et importer sur un autre téléphone. L'import fusionne sans rien effacer (la version la plus récente gagne) et vérifie le fichier. Point orange sur ⚙️ après 14 jours sans sauvegarde.
 - Hors ligne complet (service worker + base IndexedDB). Changements notés dans une file d'attente pour le futur partage en famille.
-- **Compteur anonyme** (éteint tant que le projet Firebase n'est pas créé) : une fois par semaine, la 1re fois qu'on se sert de sa liste, « +1 » sur un total de la semaine (iPhone / Android / autre, nouveau, installé). Aucun numéro, rien sur les listes. Expliqué dans « Confidentialité » en bas de l'accueil. Règles du serveur : `firestore.rules`.
+- **Compteur anonyme** (projet Firebase `listo-54cd9`, allumé en v0.14.1) : une fois par semaine, la 1re fois qu'on se sert de sa liste, « +1 » sur un total de la semaine (iPhone / Android / autre, nouveau, installé). Aucun numéro, rien sur les listes. Expliqué dans « Confidentialité » en bas de l'accueil. Règles du serveur : `firestore.rules`.
 
 ### Spécial Android
 - Vrai bouton **« Installer »** (Chrome, Samsung Internet, Edge).
