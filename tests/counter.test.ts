@@ -134,3 +134,13 @@ describe('envoi du « +1 »', () => {
     expect(e.fetch).not.toHaveBeenCalled();
   });
 });
+
+describe('projet Firebase du compteur', () => {
+  it('allumé sur le site de LISTO (projet listo-54cd9), éteint pendant les essais sur l’ordinateur', async () => {
+    const { counterConfig } = await import('../src/lib/counterConfig');
+    expect(counterConfig('ryoths.github.io')?.projectId).toBe('listo-54cd9');
+    expect(counterConfig('ryoths.github.io')?.apiKey).toMatch(/^AIza/);
+    expect(counterConfig('localhost')).toBeNull();
+    expect(counterConfig('127.0.0.1')).toBeNull();
+  });
+});
