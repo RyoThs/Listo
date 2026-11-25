@@ -16,6 +16,7 @@
 }
 
 html, body, #root { height: 100%; }
+html { touch-action: manipulation; } /* pas de zoom au double toucher (demande de Yoann) */
 body {
   margin: 0;
   background: var(--color-cream);

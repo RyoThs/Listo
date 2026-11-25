@@ -3,6 +3,7 @@ import { CloudUpload, CloudOff, UserRound } from 'lucide-react';
 import { Field } from '../../components/ui/Field';
 import { Button } from '../../components/ui/Button';
 import { ACCOUNT_EVENT, connect, currentAccount, deleteMyAccount, disconnect, lastCloudSave, lastSaveResult, resetPassword, saveNow } from '../../lib/account';
+import { saveMessage } from '../../lib/cloudSync';
 import { useUI } from '../../stores/ui';
 
 // Haut de la fenêtre « Sauvegarde » : compte facultatif pour la sauvegarde automatique.
@@ -83,24 +84,40 @@ function DeleteAccount() {
   );
 }
 
+function SaveNowButton() {
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const run = async () => {
+    setBusy(true); setMsg(null);
+    const r = await saveNow(true);
+    setMsg(r ? saveMessage(r) : { ok: false, text: 'Une sauvegarde est déjà en cours : réessaie dans un instant.' });
+    setBusy(false);
+  };
+  return (
+    <>
+      <Button variant="outline" className="w-full" disabled={busy} onClick={() => void run()}>{busy ? 'Sauvegarde…' : 'Sauvegarder maintenant'}</Button>
+      {msg && <p role="status" className={`text-sm font-medium ${msg.ok ? 'text-sage-dark' : 'text-danger'}`}>{msg.text}</p>}
+    </>
+  );
+}
+
 export function AccountSection() {
   const account = useAccount();
   const [open, setOpen] = useState(false);
   if (account) {
-    const failed = lastSaveResult() === 'failed' || lastSaveResult() === 'too-big';
+    const r = lastSaveResult();
+    const failed = r !== null && r !== 'sent' && r !== 'unchanged';
     return (
       <div className="space-y-2 rounded-2xl border border-line p-3">
         <p className={`flex items-center gap-2 font-semibold ${failed ? 'text-[#7A5512]' : 'text-sage-dark'}`}>
           {failed ? <CloudOff size={20} /> : <CloudUpload size={20} />} Sauvegarde automatique {failed ? 'en attente' : 'activée'}
         </p>
         <p className="text-sm text-muted">
-          {lastSaveResult() === 'too-big' ? 'Trop de données pour la sauvegarde en ligne : exporte un fichier.' : `Dernière sauvegarde en ligne : ${ago(lastCloudSave())}.`}
+          {failed && r ? saveMessage(r).text : `Dernière sauvegarde en ligne : ${ago(lastCloudSave())}.`}
           {' '}Compte : {account.email}
         </p>
-        <div className="grid grid-cols-2 gap-2">
-          <Button variant="outline" onClick={() => void saveNow()}>Sauvegarder maintenant</Button>
-          <Button variant="outline" onClick={disconnect}>Se déconnecter</Button>
-        </div>
+        <SaveNowButton />
+        <Button variant="outline" className="w-full" onClick={disconnect}>Se déconnecter</Button>
         <DeleteAccount />
       </div>
     );

@@ -150,3 +150,32 @@ describe('supprimer mon compte (RGPD, demandé aussi par Apple)', () => {
     expect(f.mock.calls).toHaveLength(1);
   });
 });
+
+describe('bouton « Sauvegarder maintenant » (bug signalé par Yoann : « ça ne fonctionne pas »)', () => {
+  let mem: Map<string, string>;
+  const st = { getItem: (k: string) => mem.get(k) ?? null, setItem: (k: string, v: string) => { mem.set(k, v); }, removeItem: (k: string) => { mem.delete(k); } };
+  beforeEach(async () => { mem = new Map(); await db.lists.clear(); await createList({ title: 'Courses', color: '#5B8C6E' }); });
+
+  it('envoie même si rien n’a changé (on l’a demandé exprès)', async () => {
+    const f = mk(async () => json({}));
+    expect(await saveIfChanged(cfg, session, st, f, NOW)).toBe('sent');
+    expect(await saveIfChanged(cfg, session, st, f, NOW, { force: true })).toBe('sent');
+    expect(f.mock.calls).toHaveLength(2);
+  });
+
+  it('dit toujours ce qui s’est passé, en clair', async () => {
+    const { saveMessage } = await import('../src/lib/cloudSync');
+    expect(saveMessage('sent')).toEqual({ ok: true, text: 'Sauvegardé en ligne ✓' });
+    expect(saveMessage('unchanged')).toEqual({ ok: true, text: 'Sauvegardé en ligne ✓' });
+    expect(saveMessage('offline').text).toMatch(/Pas d’internet/);
+    expect(saveMessage('refused').text).toMatch(/refusée/);
+    expect(saveMessage('failed').text).toMatch(/réessaie/);
+    expect(saveMessage('too-big').text).toMatch(/fichier/);
+  });
+
+  it('refus du serveur (règles, compte supprimé) ≠ panne de réseau', async () => {
+    expect(await saveIfChanged(cfg, session, st, mk(async () => json({}, 403)), NOW, { force: true })).toBe('refused');
+    expect(await saveIfChanged(cfg, session, st, mk(async () => json({}, 401)), NOW, { force: true })).toBe('refused');
+    expect(await saveIfChanged(cfg, session, st, mk(async () => json({}, 503)), NOW, { force: true })).toBe('failed');
+  });
+});
