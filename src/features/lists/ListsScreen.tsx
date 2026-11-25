@@ -16,6 +16,7 @@ import { FavoritesStrip } from '../favorites/FavoritesStrip';
 import { CardsStrip } from '../cards/CardsStrip';
 import { PasteListSheet } from '../received/PasteListSheet';
 import { TripsHistoryButton } from '../store-mode/TripsHistorySheet';
+import { PrivacyLink } from '../about/PrivacySheet';
 import { ErrorBoundary } from '../../components/ErrorBoundary';
 
 export function ListsScreen() {
@@ -105,7 +106,10 @@ export function ListsScreen() {
           );
         })}
         <ErrorBoundary name="Mes courses passées"><TripsHistoryButton /></ErrorBoundary>
-        <p className="pt-6 text-center text-xs text-muted">LISTO v{__APP_VERSION__}</p>
+        <div className="flex flex-col items-center pt-6">
+          <p className="text-center text-xs text-muted">LISTO v{__APP_VERSION__}</p>
+          <ErrorBoundary name="Confidentialité"><PrivacyLink /></ErrorBoundary>
+        </div>
       </main>
 
       <button onClick={() => setCreating(true)} aria-label="Nouvelle liste"
